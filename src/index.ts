@@ -129,9 +129,7 @@ class WatermarkSticker extends Watermark{
     
     public setPositionSticker(val:Types.Position){
         const position = val.position
-        const customEvent = new CustomEvent("anchor-point", {detail:{position}});
-        document.dispatchEvent(customEvent);
-        if(this.stickers){
+        if(this.stickers && super.getScale().scale !== 'custom'){
             this.UpdateSticker(this.stickers,super.getScale().scale,position)
         }
         super.setPosition(val)
@@ -176,48 +174,50 @@ class WatermarkSticker extends Watermark{
         let newY = 0;
         let newWidth = sticker.width;
         let newHeight = sticker.height;
-        
-        switch(positionData){
-            case 'top-left':
-                newX=0;
-                newY=0;
-                break;
-            case 'top-center':
-                newX = (this.canvas.width/2) - (sticker.width/2);
-                newY = 0;
-                break;
-            case 'top-right':
-                newX = this.canvas.width - sticker.width;
-                newY = 0;
-                break;
-            case 'middle-left':
-                newX = 0;
-                newY = (this.canvas.height/2) - (sticker.height/2);
-                break;
-            case 'middle-center':
-                newX = (this.canvas.width/2) - (sticker.width/2);
-                newY = (this.canvas.height/2) - (sticker.height/2);
-                break;
-            case 'middle-right':
-                newX = (this.canvas.width) - (sticker.width);
-                newY = (this.canvas.height/2) - (sticker.height/2);
-                break;
-            case 'bottom-left':
-                newX = 0;
-                newY = (this.canvas.height) - (sticker.height);
-                break;
-            case 'bottom-center':
-                newX = (this.canvas.width/2) - (sticker.width/2);
-                newY = (this.canvas.height) - (sticker.height);
-                break;
-            case 'bottom-right':
-                newX = (this.canvas.width) - (sticker.width);
-                newY = (this.canvas.height) - (sticker.height);
-                break;
-            default:
-                newX=0;
-                newY=0;
+        if(scaleData !== 'custom'){
+            switch(positionData){
+                case 'top-left':
+                    newX=0;
+                    newY=0;
+                    break;
+                case 'top-center':
+                    newX = (this.canvas.width/2) - (sticker.width/2);
+                    newY = 0;
+                    break;
+                case 'top-right':
+                    newX = this.canvas.width - sticker.width;
+                    newY = 0;
+                    break;
+                case 'middle-left':
+                    newX = 0;
+                    newY = (this.canvas.height/2) - (sticker.height/2);
+                    break;
+                case 'middle-center':
+                    newX = (this.canvas.width/2) - (sticker.width/2);
+                    newY = (this.canvas.height/2) - (sticker.height/2);
+                    break;
+                case 'middle-right':
+                    newX = (this.canvas.width) - (sticker.width);
+                    newY = (this.canvas.height/2) - (sticker.height/2);
+                    break;
+                case 'bottom-left':
+                    newX = 0;
+                    newY = (this.canvas.height) - (sticker.height);
+                    break;
+                case 'bottom-center':
+                    newX = (this.canvas.width/2) - (sticker.width/2);
+                    newY = (this.canvas.height) - (sticker.height);
+                    break;
+                case 'bottom-right':
+                    newX = (this.canvas.width) - (sticker.width);
+                    newY = (this.canvas.height) - (sticker.height);
+                    break;
+                default:
+                    newX=0;
+                    newY=0;
+            }
         }
+
         if(scaleData === "fit"){
             if((sticker.width/this.canvas.width) > (sticker.height/this.canvas.height)){
                 newWidth = this.canvas.width;
