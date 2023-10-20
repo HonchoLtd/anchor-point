@@ -228,20 +228,27 @@ class WatermarkSticker extends Watermark {
             }
         }
         if (scaleData === "fill") {
-            newWidth = this.canvas.width;
-            newHeight = this.canvas.height / 3;
-            if (positionData === null || positionData === void 0 ? void 0 : positionData.includes("top")) {
-                newX = 0;
-                newY = 0;
+            // Calculate the aspect ratios of the canvas and the sticker
+            const canvasAspectRatio = this.canvas.width / this.canvas.height;
+            const stickerAspectRatio = sticker.width / sticker.height;
+            if (canvasAspectRatio > stickerAspectRatio) {
+                // Canvas is wider
+                newWidth = this.canvas.width;
+                newHeight = newWidth / stickerAspectRatio;
             }
-            if (positionData === null || positionData === void 0 ? void 0 : positionData.includes('middle')) {
-                newX = 0;
-                newY = (this.canvas.height / 2) - (newHeight / 2);
+            else if (canvasAspectRatio < stickerAspectRatio) {
+                // Canvas is taller
+                newHeight = this.canvas.height;
+                newWidth = newHeight * stickerAspectRatio;
             }
-            if (positionData === null || positionData === void 0 ? void 0 : positionData.includes('bottom')) {
-                newX = 0;
-                newY = (this.canvas.height) - (newHeight);
+            else {
+                // Canvas and sticker have the same aspect ratio (both square)
+                newWidth = this.canvas.width;
+                newHeight = this.canvas.height;
             }
+            // The newWidth and newHeight now represent the dimensions to make the sticker fill the canvas without leaving empty space.
+            newX = (this.canvas.width / 2) - (sticker.width / 2);
+            newY = (this.canvas.height / 2) - (sticker.height / 2);
         }
         this.stickers = { sticker: sticker.sticker, x: newX, y: newY, width: newWidth, height: newHeight, rotation: sticker.rotation };
         // this.stickers={ sticker:sticker , x:x, y:y, width:width, height:height,rotation:0 };
