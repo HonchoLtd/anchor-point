@@ -1,54 +1,119 @@
 "use strict";
-// src/index.ts
 class Watermark {
     constructor() {
         this.orientation = "portrait";
-        this.watermarkConfig = {};
-        this.portrait = null;
-        this.landscape = null;
-        this.square = null;
-        this.scale = { scale: "custom" };
-        this.position = { position: "top-left" };
+        this.watermarkConfig = {
+            id: undefined,
+            landscape: {
+                sticker: {
+                    sticker: undefined,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0,
+                    rotate: 0,
+                },
+                scale: { scale: "custom" },
+                position: { position: "top-left" },
+                x: 0,
+                y: 0,
+            },
+            portrait: {
+                sticker: {
+                    sticker: undefined,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0,
+                    rotate: 0,
+                },
+                scale: { scale: "custom" },
+                position: { position: "top-left" },
+                x: 0,
+                y: 0,
+            },
+            square: {
+                sticker: {
+                    sticker: undefined,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0,
+                    rotate: 0,
+                },
+                scale: { scale: "custom" },
+                position: { position: "top-left" },
+                x: 0,
+                y: 0,
+            },
+        };
         this.canvas = document.getElementById('ubersnap-watermark');
         this.context = this.canvas.getContext('2d');
         if (!this.context) {
             throw new Error("Canvas context not supported.");
         }
-        if (this.orientation === "portrait") {
-            this.setSizeCanvas(300, 450);
-        }
+        this.setSizeCanvas(300, 450);
         this.canvas.style.border = "1px solid #8D8D8D";
     }
     saveWatermark() {
         return this.watermarkConfig;
     }
     setSizeCanvas(width, height) {
+        if (width > height) {
+            this.orientation = "landscape";
+        }
+        else if (width < height) {
+            this.orientation = "portrait";
+        }
+        else {
+            this.orientation = "square";
+        }
         this.canvas.width = width;
         this.canvas.height = height;
     }
-    setOrientation(orientation) {
-        this.orientation = orientation;
-        if (orientation === "portrait") {
-            this.setSizeCanvas(300, 450);
-        }
-        if (orientation === "landscape") {
-            this.setSizeCanvas(450, 800);
-        }
-        if (orientation === "square") {
-            this.setSizeCanvas(450, 450);
-        }
-    }
     setScale(value) {
-        this.scale = value;
+        if (this.canvas.width > this.canvas.height) {
+            this.watermarkConfig.landscape.scale = value;
+        }
+        else if (this.canvas.width > this.canvas.height) {
+            this.watermarkConfig.portrait.scale = value;
+        }
+        else {
+            this.watermarkConfig.square.scale = value;
+        }
     }
     setPosition(value) {
-        this.position = value;
+        if (this.canvas.width > this.canvas.height) {
+            this.watermarkConfig.landscape.position = value;
+        }
+        else if (this.canvas.width > this.canvas.height) {
+            this.watermarkConfig.portrait.position = value;
+        }
+        else {
+            this.watermarkConfig.square.position = value;
+        }
     }
     getScale() {
-        return this.scale;
+        if (this.canvas.width > this.canvas.height) {
+            return this.watermarkConfig.landscape.scale;
+        }
+        else if (this.canvas.width > this.canvas.height) {
+            return this.watermarkConfig.portrait.scale;
+        }
+        else {
+            return this.watermarkConfig.square.scale;
+        }
     }
     getPosition() {
-        return this.position;
+        if (this.canvas.width > this.canvas.height) {
+            return this.watermarkConfig.landscape.position;
+        }
+        else if (this.canvas.width > this.canvas.height) {
+            return this.watermarkConfig.portrait.position;
+        }
+        else {
+            return this.watermarkConfig.square.position;
+        }
     }
     setBorderColor(color) {
         this.canvas.style.borderColor = color;
@@ -60,6 +125,26 @@ class Watermark {
 class WatermarkSticker extends Watermark {
     constructor() {
         super();
+        // private landscapeStickerHistory:StickerData[]=[];
+        // private landscapeHistoryIndex=0;
+        // private portraitStickerHistory:StickerData[]=[];
+        // private portraitHistoryIndex=0;
+        // private squareStickerHistory:StickerData[]=[];
+        // private squareHistoryIndex=0;
+        this.history = {
+            landscape: {
+                sticker: [],
+                index: -1,
+            },
+            portrait: {
+                sticker: [],
+                index: -1,
+            },
+            square: {
+                sticker: [],
+                index: -1,
+            }
+        };
         this.stickers = null;
         this.isDragging = false;
         this.isResizing = false;
@@ -90,20 +175,99 @@ class WatermarkSticker extends Watermark {
         this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
         this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
         this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+        document.addEventListener('keydown', (event) => {
+            event.preventDefault();
+            if (event.ctrlKey && event.key === 'z') {
+                this.undo();
+            }
+            else if (event.ctrlKey && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+                this.redo();
+            }
+        });
+    }
+    addToHistory(sticker) {
+        const orientation = this.orientation;
+        let history = [], historyIndex = 0;
+        history = this.history[orientation].sticker;
+        historyIndex = this.history[orientation].index;
+        if (historyIndex < history.length - 1) {
+            // If we are not at the end of history, create a new branch with the updated data
+            history = history.splice(0, historyIndex + 1);
+        }
+        history.push(sticker);
+        this.history[orientation].sticker = history;
+        this.history[orientation].index = history.length - 1;
+    }
+    undo() {
+        const orientation = this.orientation;
+        let history = [];
+        let historyIndex = 0;
+        history = this.history[orientation].sticker;
+        historyIndex = this.history[orientation].index;
+        if (historyIndex >= 0) {
+            historyIndex--;
+            let sticker = history[historyIndex];
+            this.history[orientation].index = historyIndex;
+            if (sticker) {
+                this.loadStickerConfig(sticker);
+            }
+            else {
+                this.stickers = null;
+                this.redraw();
+            }
+        }
+    }
+    redo() {
+        const orientation = this.orientation;
+        let history = [];
+        let historyIndex = 0;
+        history = this.history[orientation].sticker;
+        historyIndex = this.history[orientation].index;
+        if (historyIndex < history.length - 1) {
+            historyIndex++;
+            let sticker = history[historyIndex];
+            this.history[orientation].index = historyIndex;
+            if (sticker) {
+                this.loadStickerConfig(sticker);
+            }
+        }
+    }
+    SetUploadSticker(sticker) {
+        if (this.canvas.width > this.canvas.height) {
+            this.watermarkConfig.landscape.sticker.sticker = sticker;
+        }
+        else if (this.canvas.width < this.canvas.height) {
+            this.watermarkConfig.portrait.sticker.sticker = sticker;
+        }
+        else {
+            this.watermarkConfig.square.sticker.sticker = sticker;
+        }
+    }
+    loadStickerConfig(data) {
+        this.stickers = { sticker: data.sticker, x: data.x, y: data.y, width: data.width, height: data.height, rotation: data.rotation };
+        this.redraw();
+    }
+    setWatermarkConfig(data) {
+        this.watermarkConfig = data;
+        this.redraw();
     }
     setCanvasSize(width, height) {
         this.setSizeCanvas(width, height);
-        if (this.stickers) {
-            const position = super.getPosition().position;
-            const scale = super.getScale().scale;
-            this.UpdateSticker(this.stickers, scale, position);
+        let sticker = null;
+        sticker = this.history[this.orientation].sticker[this.history[this.orientation].index];
+        if (sticker) {
+            this.stickers = sticker;
+            this.redraw();
+        }
+        else {
+            this.stickers = null;
         }
     }
     setScaleSticker(val) {
-        super.setScale(val);
         if (this.stickers) {
             this.UpdateSticker(this.stickers, val.scale, super.getPosition().position);
         }
+        super.setScale(val);
     }
     setPositionSticker(val) {
         const position = val.position;
@@ -131,19 +295,19 @@ class WatermarkSticker extends Watermark {
         width = Math.max(width, 30);
         height = Math.max(height, 30);
         // Center the sticker on the canvas
-        const x = (canvasWidth - width) / 2;
-        const y = (canvasHeight - height) / 2;
+        const x = 0;
+        const y = 0;
         this.addSticker(sticker, x, y, width, height);
     }
     UpdateSticker(sticker, scaleData, positionData) {
-        if (scaleData === "custom") {
-            this.isSelected = true;
-        }
-        else {
-            this.changeSelectedStickerOnClick(-1, -1);
-        }
-        let newX = 0;
-        let newY = 0;
+        this.isSelected = true;
+        // if(scaleData === "custom"){
+        //      this.isSelected = true;
+        // }else{
+        //     this.isSelected = false;
+        // }
+        let newX = sticker.x;
+        let newY = sticker.y;
         let newWidth = sticker.width;
         let newHeight = sticker.height;
         if (scaleData !== 'custom') {
@@ -251,6 +415,7 @@ class WatermarkSticker extends Watermark {
             newY = (this.canvas.height / 2) - (sticker.height / 2);
         }
         this.stickers = { sticker: sticker.sticker, x: newX, y: newY, width: newWidth, height: newHeight, rotation: sticker.rotation };
+        this.addToHistory({ sticker: sticker.sticker, x: newX, y: newY, width: newWidth, height: newHeight, rotation: sticker.rotation });
         // this.stickers={ sticker:sticker , x:x, y:y, width:width, height:height,rotation:0 };
         this.redraw();
     }
@@ -281,33 +446,6 @@ class WatermarkSticker extends Watermark {
     }
     doneEditing() {
         this.redraw(); // Redraw the canvas to remove the stroke
-    }
-    trackAnchorPoint(newStickerY, newStickerX) {
-        // Update the sticker's position
-        const anchorX = this.canvas.width / 3;
-        const anchorY = this.canvas.height / 3;
-        let position = "";
-        if (newStickerY < anchorY) {
-            position = "top";
-        }
-        else if (newStickerY >= anchorY && newStickerY < (anchorY * 2)) {
-            position = "middle";
-        }
-        else if (newStickerY >= (anchorY * 2)) {
-            position = "bottom";
-        }
-        if (newStickerX < anchorX) {
-            position += "-left";
-        }
-        else if (newStickerX >= anchorX && newStickerX < (anchorX * 2)) {
-            position += "-center";
-        }
-        else if (newStickerX >= (anchorX * 2)) {
-            position += "-right";
-        }
-        super.setPosition({ position: position });
-        const customEvent = new CustomEvent("anchor-point", { detail: { position } });
-        document.dispatchEvent(customEvent);
     }
     handleMouseDown(event) {
         let clientX = 0, clientY = 0;
@@ -419,7 +557,6 @@ class WatermarkSticker extends Watermark {
                 newStickerX = Math.min(this.canvas.width - stickerWidth, newStickerX);
                 // Ensure the sticker doesn't go outside the bottom boundary
                 newStickerY = Math.min(this.canvas.height - stickerHeight, newStickerY);
-                this.trackAnchorPoint(newStickerY, newStickerX);
                 selectedSticker.x = newStickerX;
                 selectedSticker.y = newStickerY;
                 this.redraw();
@@ -476,7 +613,6 @@ class WatermarkSticker extends Watermark {
                         newWidth = newHeight * this.aspectRatio; // Maintain aspect ratio
                     }
                 }
-                this.trackAnchorPoint(selectedSticker.y, selectedSticker.x);
                 // Limit the sticker's size to a minimum of 30x30 pixels
                 newWidth = Math.max(30, newWidth);
                 newHeight = Math.max(30, newHeight);
@@ -503,6 +639,10 @@ class WatermarkSticker extends Watermark {
         }
     }
     handleMouseUp() {
+        let sticker = this.stickers;
+        if (sticker) {
+            this.addToHistory(Object.assign({}, sticker));
+        }
         this.isDragging = false;
         this.isResizing = false;
         this.isResizingTopLeft = false;
@@ -595,18 +735,23 @@ class WatermarkSticker extends Watermark {
         return { x: newX, y: newY };
     }
     redraw() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.context.save(); // Save the current canvas state
         const sticker = this.stickers;
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // Draw a red stroke around the selected sticker
         if (sticker) {
             // Translate and rotate the canvas to position and rotate the sticker
-            this.context.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
-            this.context.rotate(sticker.rotation);
-            // Draw the sticker centered at (0, 0)
-            this.context.drawImage(sticker.sticker, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
-            // Restore the canvas state
-            this.context.restore();
+            if (sticker.rotation > 0) {
+                this.context.save(); // Save the current canvas state
+                this.context.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
+                this.context.rotate(sticker.rotation);
+                // Draw the sticker centered at (0, 0)
+                this.context.drawImage(sticker.sticker, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
+                // Restore the canvas state
+                this.context.restore();
+            }
+            else {
+                this.context.drawImage(sticker.sticker, sticker.x, sticker.y, sticker.width, sticker.height);
+            }
             // Calculate the rotated coordinates of the sticker's corners
             const topLeft = this.rotatePoint(sticker.x, sticker.y, sticker.x + sticker.width / 2, sticker.y + sticker.height / 2, sticker.rotation);
             const topRight = this.rotatePoint(sticker.x + sticker.width, sticker.y, sticker.x + sticker.width / 2, sticker.y + sticker.height / 2, sticker.rotation);
@@ -614,10 +759,10 @@ class WatermarkSticker extends Watermark {
             const bottomRight = this.rotatePoint(sticker.x + sticker.width, sticker.y + sticker.height, sticker.x + sticker.width / 2, sticker.y + sticker.height / 2, sticker.rotation);
             if (this.isSelected) {
                 // Calculate the bounding box of the rotated sticker
-                const minX = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-                const minY = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
-                const maxX = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-                const maxY = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+                // const minX = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+                // const minY = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+                // const maxX = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+                // const maxY = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
                 this.context.strokeStyle = 'blue';
                 this.context.lineWidth = 5;
                 this.context.strokeRect(sticker.x, sticker.y, sticker.width, sticker.height);
@@ -653,16 +798,5 @@ class WatermarkSticker extends Watermark {
                 this.context.fill();
             }
         }
-    }
-}
-class Sticker {
-    constructor(url, x, y, width, height) {
-        this.url = url;
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.image = new Image();
-        this.image.src = url;
     }
 }

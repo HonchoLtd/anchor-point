@@ -84,17 +84,6 @@
   let activeBlack = "#000000";
   let inactive = "#8D8D8D";
   let orientation = "portrait"
-  document.addEventListener("anchor-point", function(event) {
-            const position = event.detail.position;
-            resetPositionColor()
-            if(!theme){
-            document.getElementById(position).style.borderColor = activeBlack;
-            document.getElementById(position).style.backgroundColor = activeBlack;
-        }else{
-            document.getElementById(position).style.borderColor = activeWhite;
-            document.getElementById(position).style.backgroundColor = activeWhite;
-        }
-        });
   function setScale(val){
     watermark.setScaleSticker({scale:val})
   }
@@ -159,7 +148,7 @@
 
     function changeTheme(){
         this.theme = !theme;
-        const position = watermark.position;
+        const position = watermark.getPosition();
         if(!this.theme){
             headerClass.map(data=>{
                 document.getElementsByClassName(data)[0].style.borderColor = activeBlack
