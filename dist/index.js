@@ -125,12 +125,6 @@ class Watermark {
 class WatermarkSticker extends Watermark {
     constructor() {
         super();
-        // private landscapeStickerHistory:StickerData[]=[];
-        // private landscapeHistoryIndex=0;
-        // private portraitStickerHistory:StickerData[]=[];
-        // private portraitHistoryIndex=0;
-        // private squareStickerHistory:StickerData[]=[];
-        // private squareHistoryIndex=0;
         this.history = {
             landscape: {
                 sticker: [],
@@ -264,8 +258,13 @@ class WatermarkSticker extends Watermark {
         }
     }
     setScaleSticker(val) {
-        if (this.stickers) {
+        if (this.stickers && val.scale !== 'custom') {
+            this.isSelected = false;
             this.UpdateSticker(this.stickers, val.scale, super.getPosition().position);
+        }
+        else {
+            this.isSelected = true;
+            this.redraw();
         }
         super.setScale(val);
     }
@@ -300,12 +299,6 @@ class WatermarkSticker extends Watermark {
         this.addSticker(sticker, x, y, width, height);
     }
     UpdateSticker(sticker, scaleData, positionData) {
-        this.isSelected = true;
-        // if(scaleData === "custom"){
-        //      this.isSelected = true;
-        // }else{
-        //     this.isSelected = false;
-        // }
         let newX = sticker.x;
         let newY = sticker.y;
         let newWidth = sticker.width;
@@ -411,8 +404,8 @@ class WatermarkSticker extends Watermark {
                 newHeight = this.canvas.height;
             }
             // The newWidth and newHeight now represent the dimensions to make the sticker fill the canvas without leaving empty space.
-            newX = (this.canvas.width / 2) - (sticker.width / 2);
-            newY = (this.canvas.height / 2) - (sticker.height / 2);
+            newX = (this.canvas.width / 2) - (newWidth / 2);
+            newY = (this.canvas.height / 2) - (newHeight / 2);
         }
         this.stickers = { sticker: sticker.sticker, x: newX, y: newY, width: newWidth, height: newHeight, rotation: sticker.rotation };
         this.addToHistory({ sticker: sticker.sticker, x: newX, y: newY, width: newWidth, height: newHeight, rotation: sticker.rotation });

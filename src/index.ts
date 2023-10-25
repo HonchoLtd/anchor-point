@@ -183,12 +183,6 @@ interface HistorySticker {
 }
 
 class WatermarkSticker extends Watermark {
-    // private landscapeStickerHistory:StickerData[]=[];
-    // private landscapeHistoryIndex=0;
-    // private portraitStickerHistory:StickerData[]=[];
-    // private portraitHistoryIndex=0;
-    // private squareStickerHistory:StickerData[]=[];
-    // private squareHistoryIndex=0;
     private history:HistorySticker = {
         landscape:{
             sticker:[],
@@ -337,8 +331,12 @@ class WatermarkSticker extends Watermark {
     }
 
     public setScaleSticker(val:Scale){
-        if(this.stickers){
+        if(this.stickers && val.scale !== 'custom'){
+            this.isSelected = false;
             this.UpdateSticker(this.stickers,val.scale,super.getPosition().position)     
+        }else{
+            this.isSelected = true;
+            this.redraw()
         }
         super.setScale(val)
     }
@@ -382,12 +380,6 @@ class WatermarkSticker extends Watermark {
     }
 
     UpdateSticker(sticker:StickerData,scaleData?:string,positionData?:string){
-        this.isSelected = true;
-        // if(scaleData === "custom"){
-        //      this.isSelected = true;
-        // }else{
-        //     this.isSelected = false;
-        // }
         let newX = sticker.x;
         let newY = sticker.y;
         let newWidth = sticker.width;
@@ -493,8 +485,8 @@ class WatermarkSticker extends Watermark {
 // The newWidth and newHeight now represent the dimensions to make the sticker fill the canvas without leaving empty space.
 
 
-            newX = (this.canvas.width/2) - (sticker.width/2);
-            newY = (this.canvas.height/2) - (sticker.height/2);
+            newX = (this.canvas.width/2) - (newWidth/2);
+            newY = (this.canvas.height/2) - (newHeight/2);
         }
         
         this.stickers={ sticker:sticker.sticker , x:newX, y:newY, width:newWidth, height:newHeight, rotation:sticker.rotation };
