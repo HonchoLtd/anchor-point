@@ -182,24 +182,25 @@
   }
 
   // Function to handle the file selection
-  document.getElementById("sticker-data").addEventListener("change", function (event) {
-    const fileInput = event.target;
-    if (fileInput.files.length > 0) {
-        const selectedFile = fileInput.files[0];
-        
-        // Create a new Image object
-        const image = new Image();
-        image.src = URL.createObjectURL(selectedFile);
-        
-        // Set an event listener to load the image when it's loaded
-        image.onload = function() { 
-            this.image = image
-            watermark.setStickerData(image,image.width,image.height)
-        };
-        
-        // Load the selected file into the Image object
-      // You can access the selected file here and perform further actions, such as uploading it to a server.
-    }
+  const imgInput =document.getElementById("sticker-data")
+  imgInput.addEventListener("change", function (event) {
+    const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            // Render the image on the canvas twice
+                            watermark.setStickerData(img,img.width,img.height);
+                            imgInput.value=""
+                        };
+                        img.src = e.target.result;
+                        img.onerror = function(e) {
+                            console.log("Error loading the image : ",e);
+                        };
+                    };
+                    reader.readAsDataURL(file);
+                }
   });
 
   // Add a click event listener to the "Upload" button to trigger the file input
