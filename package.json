@@ -1,25 +1,58 @@
 {
-  "name": "anchor-point",
+  "name": "simple-canvas-watermark-editor",
   "version": "1.0.0",
-  "description": "setting anchor point sdk for ubersnap",
-  "main": "index.js",
+  "description": "",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "test",
-    "build": "npx tsc"
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "release": "npm run build && changeset publish",
+    "lint": "tsc"
   },
-  "keywords": [
-    "anchor",
-    "point",
-    "canvas"
-  ],
-  "author": "ubersnap pte. ltd",
+  "author": "Ferdy Barliansyah R",
   "license": "ISC",
+  "homepage": "https://github.com/achmadAt/simple-canvas-image-editor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/achmadAt/simple-canvas-image-editor.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "ignore": [
+      "example/"
+    ]
+  },
+  "files": [
+    "/dist"
+  ],
+  "bugs": {
+    "url": "https://github.com/achmadAt/simple-canvas-image-editor/issues"
+  },
   "devDependencies": {
-    "@types/express": "^4.17.19",
-    "ts-node": "^10.9.1",
+    "@changesets/cli": "^2.26.2",
+    "@swc/core": "^1.3.89",
+    "@types/jest": "^29.5.7",
+    "@typescript-eslint/eslint-plugin": "^6.7.2",
+    "@typescript-eslint/parser": "^6.7.2",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-standard-with-typescript": "^39.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jest": "^27.4.0",
+    "eslint-plugin-n": "^16.1.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "ts-jest": "^29.1.1",
+    "tsup": "^7.2.0",
     "typescript": "^5.2.2"
   },
-  "dependencies": {
-    "express": "^4.18.2"
-  }
+  "keywords": [
+    "canvas",
+    "sticker",
+    "watermark",
+    "react"
+  ]
 }
