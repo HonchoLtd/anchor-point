@@ -1,14 +1,36 @@
+interface Background {
+    img: HTMLImageElement;
+    width: number;
+    height: number;
+}
+interface Sticker {
+    id?: string;
+    sticker?: Content;
+    name: string;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+    anchor: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right";
+    size: "Custom" | "Fit" | "Fill";
+    angle: number;
+}
+interface Content {
+    key: string;
+    path: string;
+    width: number;
+    height: number;
+}
+
 declare class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
     protected image: HTMLImageElement;
+    protected sticker: Sticker;
+    protected background: Background | null;
     protected aspectRatio: number;
-    protected angle: number;
-    protected scale: number;
     protected x: number;
     protected y: number;
-    protected width: number;
-    protected height: number;
     protected resizeHandleSize: number;
     protected rotateHandleSize: number;
     protected handleColor: string;
@@ -16,13 +38,17 @@ declare class Canvas {
     protected rotateIcon: HTMLImageElement[];
     protected resizeIcon: HTMLImageElement[];
     protected cursor: Record<string, string>;
-    protected constructor();
-    private setRotateIcon;
+    protected onResizeScreen: EventListener;
+    protected constructor(canvasId: string);
+    protected calculateAnchor(anchor?: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
+    protected calculateRelativeXY(anchor?: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
+    setAnchorPoint(anchor: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
+    protected dispatchEvent(): void;
+    private setIcon;
     protected setCursor(condition: string): void;
     private initializeCanvasSize;
     private handleResizeScreen;
-    private setSticker;
-    setImage(path: string): void;
+    setBackgroundImage(path: string): void;
     protected drawImage(): void;
 }
 
@@ -47,8 +73,11 @@ declare class Click extends Canvas {
     private initialDistance;
     private currentDistance;
     private endPoint;
-    private boundOnMouseEnter;
-    constructor();
+    protected boundOnMouseEnter: EventListener;
+    protected boundOnMouseDown: EventListener;
+    protected boundOnMouseMove: EventListener;
+    protected boundOnMouseUp: EventListener;
+    constructor(canvasId: string);
     onMouseEnter(e: MouseEvent): void;
     onMouseDown(e: MouseEvent | TouchEvent): void;
     onMouseMove(e: MouseEvent | TouchEvent): void;
@@ -70,16 +99,19 @@ declare class Click extends Canvas {
     getResizePosition(x: number, y: number): number | null;
     handleRotation(mouseX: number, mouseY: number): void;
     handleResize(mouseX: number, mouseY: number): void;
-    clickDrawImage(): void;
-    drawHandles(): void;
+    private clickDrawImage;
+    private drawHandles;
 }
 
 declare class TouchGesture extends Click {
     private lastTouches;
     private animationFrame;
     private isAnimating;
-    constructor();
-    calculateScale(e: TouchEvent): number;
+    protected boundOnTouchDown: EventListener;
+    protected boundOnTouchMove: EventListener;
+    protected boundOnTouchUp: EventListener;
+    constructor(canvasId: string);
+    calculateScale(e: TouchEvent): void;
     calculateRotation(e: TouchEvent): number;
     private animate;
     private stopAnimate;
@@ -90,7 +122,22 @@ declare class TouchGesture extends Click {
 }
 
 declare class Watermark extends TouchGesture {
-    constructor();
+    private orientation;
+    constructor(canvasId: string);
+    setCanvasSize(width: number, height: number): void;
+    calculateFit(): void;
+    calculateFill(): void;
+    setSize(size: "Custom" | "Fit" | "Fill"): void;
+    private setStickerImage;
+    setSticker(path: string): void;
+    resizeOff(): void;
+    resizeOn(): void;
+    listenerOff(): void;
+    listenerOn(): void;
+    setStickerConfig(data: Sticker): void;
+    setName(name: string): void;
+    save(): string;
+    getStickerData(): Sticker;
 }
 
-export { Watermark };
+export { Watermark as default };

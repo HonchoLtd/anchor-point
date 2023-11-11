@@ -1,2 +1,185 @@
-// core lib
-export {default as Watermark} from "@core/Watermark.ts";
+import { Sticker } from "types/type";
+import TouchGesture from "./lib/TouchGesture";
+class Watermark extends TouchGesture {
+    private orientation: "landscape"|"portrait"|"square"="portrait"
+    constructor(canvasId:string){
+        super(canvasId)
+    }
+    setCanvasSize(width:number,height:number){
+        if(width > height){
+            this.orientation = "landscape";
+        }else if(width < height){
+            this.orientation = "portrait";
+        }else{
+            this.orientation = "square";
+        }
+        this.canvas.width = width;
+        this.canvas.height = height;
+        if(this.sticker){
+            super.calculateRelativeXY()
+            if(this.sticker.size === "Fit"){
+                this.calculateFit()
+            }
+            if(this.sticker.size === "Fill"){
+                this.calculateFill()
+            }
+            super.dispatchEvent()
+            super.drawImage()
+        }
+    }
+    calculateFit(){
+        let newWidth= 0;
+        let newHeight= 0;
+        if((this.sticker.width/this.canvas.width) > (this.sticker.height/this.canvas.height)){
+            newWidth = this.canvas.width;
+            newHeight = newWidth / this.aspectRatio;
+        }else if((this.sticker.width/this.canvas.width) < (this.sticker.height/this.canvas.height)){
+            newHeight = this.canvas.height;
+            newWidth = newHeight * this.aspectRatio;
+        }else{
+            newWidth = this.canvas.width;
+            newHeight = this.canvas.height;
+            }
+        this.sticker.width = newWidth;
+        this.sticker.height = newHeight;
+        this.x=0;
+        this.y=0;
+    }
+    calculateFill(){
+        const canvasAspectRatio = this.canvas.width / this.canvas.height;
+            const stickerAspectRatio = this.sticker.width / this.sticker.height;
+            let newWidth= 0;
+        let newHeight= 0;
+            if (canvasAspectRatio > stickerAspectRatio) {
+                // Canvas is wider
+                newWidth = this.canvas.width;
+                newHeight = newWidth / stickerAspectRatio;
+            } else if (canvasAspectRatio < stickerAspectRatio) {
+                // Canvas is taller
+                newHeight = this.canvas.height;
+                newWidth = newHeight * stickerAspectRatio;
+            } else {
+                // Canvas and sticker have the same aspect ratio (both square)
+                newWidth = this.canvas.width;
+                newHeight = this.canvas.height;
+            }
+            this.sticker.width = newWidth;
+            this.sticker.height = newHeight;
+            this.x = (this.canvas.width/2) - (this.sticker.width/2);
+            this.y = (this.canvas.height/2) - (this.sticker.height/2);
+    }
+    setSize(size:"Custom"|"Fit"|"Fill"){
+        if(this.sticker){
+            this.sticker.size = size
+            if(size==="Fit"){
+                this.calculateFit()
+                super.calculateAnchor()
+            }else if(size==="Fill"){
+                this.calculateFill()
+                super.calculateAnchor()
+            }
+            super.dispatchEvent()
+            super.drawImage()
+        }
+    }
+    private setStickerImage(sticker: HTMLImageElement, width: number, height: number) {
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+
+        // Calculate the scaled dimensions while maintaining the aspect ratio
+        const aspectRatio = sticker.width / sticker.height;
+        this.aspectRatio = aspectRatio;
+
+        // Scale the sticker to fit within the canvas width and height
+        if (width > canvasWidth) {
+            width = canvasWidth;
+            height = width / aspectRatio;
+        }
+
+        if (height > canvasHeight) {
+            height = canvasHeight;
+            width = height * aspectRatio;
+        }
+
+        // Ensure the sticker dimensions are at least 30x30 pixels
+        width = Math.max(width, 100);
+        height = Math.max(height, 100);
+        if(this.sticker.size === "Custom"){
+            this.sticker.width = width;
+            this.sticker.height = height;
+            this.x = 0;
+            this.y = 0;
+        }else if(this.sticker.size === "Fit"){
+            this.calculateFit()
+        }else if(this.sticker.size === "Fill"){
+            this.calculateFill()
+        }
+        this.dispatchEvent()
+        this.drawImage();
+    }
+    public setSticker(path: string) {
+        // Load the image
+        const img = new Image();
+        img.src = path;
+
+        img.onload = () => {
+            this.image=img,
+            this.image.width=img.width,
+            this.image.height=img.height,
+            this.sticker.width = img.width
+            this.sticker.height = img.height
+            this.setStickerImage(img, img.width, img.height);
+        };
+    }
+    resizeOff(){
+        window.removeEventListener('resize', this.onResizeScreen);
+    }
+    resizeOn(){
+        window.addEventListener('resize', this.onResizeScreen);
+    }
+    listenerOff(){
+        this.canvas.removeEventListener('mouseenter', this.boundOnMouseEnter);
+        this.canvas.removeEventListener('mousedown', this.boundOnMouseDown);
+        this.canvas.removeEventListener('mousemove', this.boundOnMouseMove);
+        this.canvas.removeEventListener('mouseup', this.boundOnMouseUp);
+        this.canvas.removeEventListener("touchstart", this.boundOnTouchDown);
+        this.canvas.removeEventListener("touchmove", this.boundOnTouchMove);
+        this.canvas.removeEventListener("touchend", this.boundOnTouchUp);
+    }
+    listenerOn(){
+        this.canvas.addEventListener('mouseenter', this.boundOnMouseEnter);
+        this.canvas.addEventListener('mousedown', this.boundOnMouseDown);
+        this.canvas.addEventListener('mousemove', this.boundOnMouseMove);
+        this.canvas.addEventListener('mouseup', this.boundOnMouseUp);
+        this.canvas.addEventListener("touchstart", this.boundOnTouchDown);
+        this.canvas.addEventListener("touchmove", this.boundOnTouchMove);
+        this.canvas.addEventListener("touchend", this.boundOnTouchUp);
+    }
+    setStickerConfig(data:Sticker){
+        if(!data.sticker)return;
+        this.sticker = data
+        const img = new Image();
+        img.src = data.sticker.path
+        img.onload = ()=>{
+            this.image = img
+            this.image.width = img.width
+            this.image.height = img.height
+            super.calculateRelativeXY()
+        }
+        super.drawImage()
+    }
+    setName(name:string){
+        this.sticker.name = name
+        super.dispatchEvent()
+    }
+    save(){
+        this.selectedImage = false
+        super.drawImage()
+        const dataURL = this.canvas.toDataURL();
+        return dataURL
+    }
+    getStickerData(){
+        return this.sticker
+    }
+}
+export default Watermark;

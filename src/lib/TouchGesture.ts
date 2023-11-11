@@ -1,18 +1,22 @@
-import Click from "@lib/Click";
+import Click from "./Click";
 class TouchGesture extends Click {
     private lastTouches: Touch[] = [];
     private animationFrame: number | null = null;
     private isAnimating: boolean = false;
+    protected boundOnTouchDown:EventListener;
+    protected boundOnTouchMove:EventListener
+    protected boundOnTouchUp:EventListener
 
-    constructor() {
-        super();
+    constructor(canvasId:string) {
+        super(canvasId);
 
-        this.canvas.addEventListener("touchstart", this.onTouchStart.bind(this));
-        this.canvas.addEventListener("touchmove", this.onTouchMove.bind(this));
-        this.canvas.addEventListener("touchend", this.onTouchEnd.bind(this));
+        this.boundOnTouchDown = this.onTouchStart.bind(this) as EventListener;
+        this.boundOnTouchMove = this.onTouchMove.bind(this) as EventListener;
+        this.boundOnTouchUp = this.onTouchEnd.bind(this) as EventListener;
     }
 
-    calculateScale(e:TouchEvent): number {
+    calculateScale(e:TouchEvent): void {
+        if(!this.sticker)return;
         if (e.touches.length >= 2) {
             const initialDistance = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
@@ -26,89 +30,94 @@ class TouchGesture extends Click {
 
             const deltaDistance = currentDistance - initialDistance;
 
-            const newHeight = this.height - deltaDistance;
+            const newHeight = this.sticker.height - deltaDistance;
             const newWidth = newHeight * this.aspectRatio;
 
-            const deltaX = (this.width - newWidth) / 2;
-            const deltaY = (this.height - newHeight) / 2;
+            const deltaX = (this.sticker.width - newWidth) / 2;
+            const deltaY = (this.sticker.height - newHeight) / 2;
 
-            this.width = newWidth;
-            this.height = newHeight;
+            this.sticker.width = newWidth;
+            this.sticker.height = newHeight;
 
             this.x += deltaX;
             this.y += deltaY;
-
-            return deltaDistance;
         }
-
-        return 1;
     }
 
     calculateRotation(e: TouchEvent): number {
-        if (e.touches.length >= 2) {
-            const initialAngle = Math.atan2(
-                this.lastTouches[1].clientY - this.lastTouches[0].clientY,
-                this.lastTouches[1].clientX - this.lastTouches[0].clientX
-            );
-            const currentAngle = Math.atan2(
-                e.touches[1].clientY - e.touches[0].clientY,
-                e.touches[1].clientX - e.touches[0].clientX
-            );
-            return this.angle + (currentAngle - initialAngle);
+        if(this.sticker){
+            if (e.touches.length >= 2) {
+                const initialAngle = Math.atan2(
+                    this.lastTouches[1].clientY - this.lastTouches[0].clientY,
+                    this.lastTouches[1].clientX - this.lastTouches[0].clientX
+                );
+                const currentAngle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return this.sticker.angle + (currentAngle - initialAngle);
+            }
+            return this.sticker.angle;
         }
-        return this.angle;
+        return 0;
     }
 
-    private animate(): void {
+    private animate() {
         if (!this.isAnimating) return;
         this.animationFrame = requestAnimationFrame(this.animate.bind(this));
         this.touchDrawImage();
     }
 
-    private stopAnimate(): void {
+    private stopAnimate() {
         if(this.animationFrame)
             cancelAnimationFrame(this.animationFrame);
         this.isAnimating = false;
     }
 
-    private touchDrawImage(): void {
+    private touchDrawImage() {
         super.drawImage();
     }
 
-    private onTouchStart(e: TouchEvent): void {
+    private onTouchStart(e: TouchEvent) {
         e.preventDefault();
 
         if (e.touches.length >= 2) {
+            if(this.sticker){
             this.isAnimating = true;
             this.selectedImage = false;
             this.lastTouches = Array.from(e.touches);;
             this.animate();
-            this.angle = this.calculateRotation(e);
-            this.scale = this.calculateScale(e);
+
+            this.sticker.angle = this.calculateRotation(e);
+            this.calculateScale(e);
+        }
         } else if (e.touches.length === 1) {
             super.onMouseDown(e);
         }
     }
 
-    private onTouchMove(e: TouchEvent): void {
+    private onTouchMove(e: TouchEvent) {
         e.preventDefault();
         if (e.touches.length >= 2) {
-            this.angle = this.calculateRotation(e);
-            this.scale = this.calculateScale(e);
-            this.lastTouches = Array.from(e.touches);
+            if(this.sticker){
+                this.sticker.angle = this.calculateRotation(e);
+                this.calculateScale(e);
+                this.lastTouches = Array.from(e.touches);
+            }
         } else if (e.touches.length === 1) {
             super.onMouseMove(e);
         }
     }
 
-    private onTouchEnd(): void {
+    private onTouchEnd() {
         super.handleCursor(-1, -1);
         this.lastTouches = [];
         super.reset();
         this.clicked = false;
         this.selectedHandle = null;
         this.stopAnimate();
+        super.calculateAnchor()
+        super.dispatchEvent()
     }
 }
-
 export default TouchGesture;

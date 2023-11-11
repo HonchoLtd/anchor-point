@@ -1,6 +1,7 @@
 // src/lib/Canvas.ts
 var Canvas = class {
-  constructor() {
+  constructor(canvasId) {
+    this.background = null;
     this.resizeHandleSize = 40;
     this.rotateHandleSize = 80;
     this.handleColor = "blue";
@@ -8,23 +9,19 @@ var Canvas = class {
     this.rotateIcon = [];
     this.resizeIcon = [];
     this.cursor = {
-      pointer: "./cursor/Hand.cur",
-      default: "./cursor/Arrow.cur",
-      neSize: "./cursor/SizeNESW.cur",
-      nwSize: "./cursor/SizeNWSE.cur",
-      rotate: "./cursor/Rotate.cur",
-      move: "./cursor/Cross.cur"
+      pointer: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Hand.cur",
+      default: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Arrow.cur",
+      neSize: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/SizeNESW.cur",
+      nwSize: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/SizeNWSE.cur",
+      rotate: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Rotate.cur",
+      move: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Cross.cur"
     };
-    this.canvas = document.getElementById("myCanvas");
+    this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
     this.image = new Image();
     this.aspectRatio = 0;
-    this.angle = 0;
-    this.scale = 1;
     this.x = 0;
     this.y = 0;
-    this.width = 0;
-    this.height = 0;
     this.resizeHandleSize = 40;
     this.rotateHandleSize = 80;
     this.handleColor = "blue";
@@ -32,33 +29,148 @@ var Canvas = class {
     this.rotateIcon = [];
     this.resizeIcon = [];
     this.setCursor("default");
-    this.setRotateIcon();
+    this.setIcon();
+    this.sticker = {
+      name: "Untitled",
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      anchor: "top-left",
+      size: "Custom",
+      angle: 0
+    };
     this.initializeCanvasSize();
-    window.addEventListener("resize", () => this.handleResizeScreen());
+    this.onResizeScreen = this.handleResizeScreen.bind(this);
   }
-  setRotateIcon() {
+  calculateAnchor(anchor) {
+    const data = anchor || this.sticker.anchor;
+    switch (data) {
+      case "top-left":
+        this.sticker.x = this.x;
+        this.sticker.y = this.y;
+        break;
+      case "top-center":
+        this.sticker.x = this.x - this.canvas.width / 2;
+        this.sticker.y = this.y;
+        break;
+      case "top-right":
+        this.sticker.x = this.canvas.width - this.x;
+        this.sticker.y = this.y;
+        break;
+      case "middle-left":
+        this.sticker.x = this.x;
+        this.sticker.y = this.y - this.canvas.height / 2;
+        break;
+      case "middle-center":
+        this.sticker.x = this.x - this.canvas.width / 2;
+        this.sticker.y = this.y - this.canvas.height / 2;
+        break;
+      case "middle-right":
+        this.sticker.x = this.canvas.width - this.x;
+        this.sticker.y = this.y - this.canvas.height / 2;
+        break;
+      case "bottom-left":
+        this.sticker.x = this.x;
+        this.sticker.y = this.canvas.height - this.y;
+        break;
+      case "bottom-center":
+        this.sticker.x = this.x - this.canvas.width / 2;
+        this.sticker.y = this.canvas.height - this.y;
+        break;
+      case "bottom-right":
+        this.sticker.x = this.canvas.width - this.x;
+        this.sticker.y = this.canvas.height - this.y;
+        break;
+      default:
+        console.log("Wrong data input");
+        break;
+    }
+  }
+  calculateRelativeXY(anchor) {
+    const data = anchor || this.sticker.anchor;
+    let x = 0;
+    let y = 0;
+    switch (data) {
+      case "top-left":
+        x = this.sticker.x;
+        y = this.sticker.y;
+        break;
+      case "top-center":
+        x = this.sticker.x + this.canvas.width / 2;
+        y = this.sticker.y;
+        break;
+      case "top-right":
+        x = this.canvas.width - this.sticker.x;
+        y = this.sticker.y;
+        break;
+      case "middle-left":
+        x = this.sticker.x;
+        y = this.sticker.y + this.canvas.height / 2;
+        break;
+      case "middle-center":
+        x = this.sticker.x + this.canvas.width / 2;
+        y = this.sticker.y + this.canvas.height / 2;
+        break;
+      case "middle-right":
+        x = this.canvas.width - this.sticker.x;
+        y = this.sticker.y + this.canvas.height / 2;
+        break;
+      case "bottom-left":
+        x = this.sticker.x;
+        y = this.canvas.height - this.sticker.y;
+        break;
+      case "bottom-center":
+        x = this.sticker.x + this.canvas.width / 2;
+        y = this.canvas.height - this.sticker.y;
+        break;
+      case "bottom-right":
+        x = this.canvas.width - this.sticker.x;
+        y = this.canvas.height - this.sticker.y;
+        break;
+      default:
+        console.log("Wrong data input");
+        break;
+    }
+    this.x = x;
+    this.y = y;
+  }
+  setAnchorPoint(anchor) {
+    if (this.sticker) {
+      this.sticker.anchor = anchor;
+      this.calculateAnchor(anchor);
+      this.dispatchEvent();
+      this.drawImage();
+    }
+  }
+  dispatchEvent() {
+    const sticker = this.sticker;
+    const customEvent = new CustomEvent("sticker", { detail: { sticker } });
+    document.dispatchEvent(customEvent);
+  }
+  setIcon() {
     const rotateIcon = [
-      "./cursor/png/top-left-rotate.png",
-      "./cursor/png/top-right-rotate.png",
-      "./cursor/png/bottom-left-rotate.png",
-      "./cursor/png/bottom-right-rotate.png"
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/top-left-rotate.png",
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/top-right-rotate.png",
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/bottom-left-rotate.png",
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/bottom-right-rotate.png"
     ];
     const resizeIcon = [
-      "./cursor/png/ne-resize.png",
-      "./cursor/png/nw-resize.png"
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/ne-resize.png",
+      "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/nw-resize.png"
     ];
-    rotateIcon.map((ico) => {
+    rotateIcon.map((ico, index) => {
       const icon = new Image();
       icon.src = ico;
       icon.onload = () => {
-        this.rotateIcon.push(icon);
+        this.rotateIcon[index] = icon;
       };
     });
-    resizeIcon.map((ico) => {
+    resizeIcon.map((ico, index) => {
       const icon = new Image();
       icon.src = ico;
       icon.onload = () => {
-        this.resizeIcon.push(icon);
+        this.resizeIcon[index] = icon;
       };
     });
   }
@@ -66,59 +178,61 @@ var Canvas = class {
     this.canvas.style.cursor = `url(${this.cursor[condition]}), auto`;
   }
   initializeCanvasSize() {
-    this.canvas.width = this.canvas.parentElement.clientWidth;
-    this.canvas.height = this.canvas.parentElement.clientHeight;
+    if (this.background) {
+      const aspectRatio = this.background.width / this.background.height;
+      const parentElement = this.canvas.parentElement;
+      if (parentElement) {
+        const maxWidth = parentElement.clientWidth;
+        const maxHeight = parentElement.clientHeight;
+        if (maxWidth / aspectRatio < maxHeight) {
+          this.canvas.width = maxWidth;
+          this.canvas.height = maxWidth / aspectRatio;
+        } else {
+          this.canvas.width = maxHeight * aspectRatio;
+          this.canvas.height = maxHeight;
+        }
+      }
+    } else {
+      this.canvas.width = this.canvas.parentElement.clientWidth;
+      this.canvas.height = this.canvas.parentElement.clientHeight;
+    }
   }
   handleResizeScreen() {
     this.initializeCanvasSize();
     this.drawImage();
   }
-  setSticker(sticker, width, height) {
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
-    const aspectRatio = sticker.width / sticker.height;
-    this.aspectRatio = aspectRatio;
-    if (width > canvasWidth) {
-      width = canvasWidth;
-      height = width / aspectRatio;
-    }
-    if (height > canvasHeight) {
-      height = canvasHeight;
-      width = height * aspectRatio;
-    }
-    width = Math.max(width, 100);
-    height = Math.max(height, 100);
-    this.width = width;
-    this.height = height;
-    this.x = 0;
-    this.y = 0;
-    this.drawImage();
-  }
-  setImage(path) {
+  setBackgroundImage(path) {
     const img = new Image();
     img.src = path;
     img.onload = () => {
-      this.image = img;
-      this.image.width = img.width;
-      this.image.height = img.height;
-      this.setSticker(img, img.width, img.height);
+      this.background = {
+        img,
+        width: img.width,
+        height: img.height
+      };
+      this.handleResizeScreen();
     };
   }
   drawImage() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.save();
-    this.ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-    this.ctx.rotate(this.angle);
-    this.ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
-    this.ctx.restore();
+    if (this.background) {
+      this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
+    }
+    if (this.sticker) {
+      this.ctx.save();
+      this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+      this.ctx.rotate(this.sticker.angle);
+      this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+      this.ctx.restore();
+    }
   }
 };
 var Canvas_default = Canvas;
 
 // src/lib/Click.ts
 var Click = class extends Canvas_default {
-  constructor() {
-    super();
+  constructor(canvasId) {
+    super(canvasId);
     this.selectedImage = false;
     this.clicked = false;
     this.dragStartX = 0;
@@ -157,15 +271,16 @@ var Click = class extends Canvas_default {
     this.initialWidth = 0;
     this.initialHeight = 0;
     this.boundOnMouseEnter = this.onMouseEnter.bind(this);
-    this.canvas.addEventListener("mouseenter", this.boundOnMouseEnter);
-    this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
-    this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
-    this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
+    this.boundOnMouseDown = this.onMouseDown.bind(this);
+    this.boundOnMouseMove = this.onMouseMove.bind(this);
+    this.boundOnMouseUp = this.onMouseUp.bind(this);
   }
   onMouseEnter(e) {
     this.onMouseMove(e);
   }
   onMouseDown(e) {
+    if (!this.sticker)
+      return;
     this.clicked = true;
     let clientX = 0, clientY = 0;
     if (e instanceof MouseEvent) {
@@ -188,8 +303,8 @@ var Click = class extends Canvas_default {
     if (this.isResizing) {
       this.resizeStartX = rotatedX;
       this.resizeStartY = rotatedY;
-      this.initialWidth = this.width;
-      this.initialHeight = this.height;
+      this.initialWidth = this.sticker.width;
+      this.initialHeight = this.sticker.height;
     } else if (this.isDragging) {
       this.dragStartX = mouseX - this.x;
       this.dragStartY = mouseY - this.y;
@@ -231,25 +346,28 @@ var Click = class extends Canvas_default {
   onMouseUp() {
     this.reset();
     this.selectedHandle = null;
+    super.dispatchEvent();
+    super.calculateAnchor();
   }
   handleDraging(mouseX, mouseY) {
+    if (!this.sticker)
+      return;
     let newStickerX = mouseX - this.dragStartX;
     let newStickerY = mouseY - this.dragStartY;
-    newStickerX = Math.max(0, newStickerX);
-    newStickerY = Math.max(0, newStickerY);
-    newStickerX = Math.min(this.canvas.width - this.width, newStickerX);
-    newStickerY = Math.min(this.canvas.height - this.height, newStickerY);
     this.x = newStickerX;
     this.y = newStickerY;
   }
   getRotatedXY(x, y) {
-    const cosAngle = Math.cos(-this.angle);
-    const sinAngle = Math.sin(-this.angle);
-    const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
-    const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
-    const rotatedY = (x - centerX) * sinAngle + (y - centerY) * cosAngle + centerY;
-    return { rotatedX, rotatedY, centerX, centerY, cosAngle, sinAngle };
+    if (this.sticker) {
+      const cosAngle = Math.cos(-this.sticker.angle);
+      const sinAngle = Math.sin(-this.sticker.angle);
+      const centerX = this.x + this.sticker.width / 2;
+      const centerY = this.y + this.sticker.height / 2;
+      const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
+      const rotatedY = (x - centerX) * sinAngle + (y - centerY) * cosAngle + centerY;
+      return { rotatedX, rotatedY, centerX, centerY, cosAngle, sinAngle };
+    }
+    return { rotatedX: 0, rotatedY: 0, centerX: 0, centerY: 0, cosAngle: 0, sinAngle: 0 };
   }
   handleAction(mouseX, mouseY) {
     const isInsideImage = this.isPointerInsideImage(mouseX, mouseY);
@@ -306,7 +424,7 @@ var Click = class extends Canvas_default {
   }
   isPointerInsideImage(mouseX, mouseY) {
     const { rotatedX, rotatedY } = this.getRotatedXY(mouseX, mouseY);
-    return rotatedX >= this.x && rotatedX <= this.x + this.width && rotatedY >= this.y && rotatedY <= this.y + this.height;
+    return this.sticker && rotatedX >= this.x && rotatedX <= this.x + this.sticker.width && rotatedY >= this.y && rotatedY <= this.y + this.sticker.height;
   }
   reset() {
     this.isDragging = false;
@@ -318,13 +436,15 @@ var Click = class extends Canvas_default {
     this.isResizingBottomRight = false;
   }
   getRotatePosition(x, y) {
+    if (!this.sticker)
+      return null;
     const halfHandleSize = this.rotateHandleSize / 2;
     const { rotatedX, rotatedY, centerX, centerY } = this.getRotatedXY(x, y);
     const rotatedHandles = [
-      { x: centerX - this.width / 2, y: centerY - this.height / 2 },
-      { x: centerX + this.width / 2, y: centerY - this.height / 2 },
-      { x: centerX - this.width / 2, y: centerY + this.height / 2 },
-      { x: centerX + this.width / 2, y: centerY + this.height / 2 }
+      { x: centerX - this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+      { x: centerX + this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+      { x: centerX - this.sticker.width / 2, y: centerY + this.sticker.height / 2 },
+      { x: centerX + this.sticker.width / 2, y: centerY + this.sticker.height / 2 }
     ];
     for (let i = 0; i < rotatedHandles.length; i++) {
       const handle = rotatedHandles[i];
@@ -335,13 +455,15 @@ var Click = class extends Canvas_default {
     return null;
   }
   getResizePosition(x, y) {
+    if (!this.sticker)
+      return null;
     const halfHandleSize = this.resizeHandleSize;
     const { rotatedX, rotatedY, centerX, centerY } = this.getRotatedXY(x, y);
     const rotatedHandles = [
-      { x: centerX - this.width / 2, y: centerY - this.height / 2 },
-      { x: centerX + this.width / 2, y: centerY - this.height / 2 },
-      { x: centerX - this.width / 2, y: centerY + this.height / 2 },
-      { x: centerX + this.width / 2, y: centerY + this.height / 2 }
+      { x: centerX - this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+      { x: centerX + this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+      { x: centerX - this.sticker.width / 2, y: centerY + this.sticker.height / 2 },
+      { x: centerX + this.sticker.width / 2, y: centerY + this.sticker.height / 2 }
     ];
     for (let i = 0; i < rotatedHandles.length; i++) {
       const handle = rotatedHandles[i];
@@ -352,12 +474,16 @@ var Click = class extends Canvas_default {
     return null;
   }
   handleRotation(mouseX, mouseY) {
-    const centerX = this.x + this.width / 2;
-    const centerY = this.y + this.height / 2;
-    const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
-    this.angle = angle;
+    if (this.sticker) {
+      const centerX = this.x + this.sticker.width / 2;
+      const centerY = this.y + this.sticker.height / 2;
+      const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
+      this.sticker.angle = angle;
+    }
   }
   handleResize(mouseX, mouseY) {
+    if (!this.sticker)
+      return;
     const delta = this.getRotatedXY(mouseX, mouseY);
     const deltaX = delta.rotatedX - this.resizeStartX;
     const deltaY = delta.rotatedY - this.resizeStartY;
@@ -412,36 +538,43 @@ var Click = class extends Canvas_default {
     } else if (newHeightFinal > newWidthFinal / this.aspectRatio) {
       newHeightFinal = newWidthFinal / this.aspectRatio;
     }
-    this.width = newWidthFinal;
-    this.height = newHeightFinal;
+    this.sticker.width = newWidthFinal;
+    this.sticker.height = newHeightFinal;
   }
   clickDrawImage() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.save();
-    this.ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-    this.ctx.rotate(this.angle);
-    this.ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
-    if (this.selectedImage) {
-      this.drawHandles();
+    if (this.background) {
+      this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
     }
-    this.ctx.restore();
+    if (this.sticker) {
+      this.ctx.save();
+      this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+      this.ctx.rotate(this.sticker.angle);
+      this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+      if (this.selectedImage) {
+        this.drawHandles();
+      }
+      this.ctx.restore();
+    }
   }
   drawHandles() {
+    if (!this.sticker)
+      return;
     const handleRotate = [
-      { x: -this.width / 2 - this.rotateHandleSize + this.rotateHandleSize / 2, y: -this.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2 },
-      { x: this.width / 2 - this.rotateHandleSize / 2, y: -this.height / 2 - this.rotateHandleSize / 2 },
-      { x: -this.width / 2 - this.rotateHandleSize / 2, y: this.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2 },
-      { x: this.width / 2 - this.rotateHandleSize / 2, y: this.height / 2 - this.rotateHandleSize / 2 }
+      { x: -this.sticker.width / 2 - this.rotateHandleSize + this.rotateHandleSize / 2, y: -this.sticker.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2 },
+      { x: this.sticker.width / 2 - this.rotateHandleSize / 2, y: -this.sticker.height / 2 - this.rotateHandleSize / 2 },
+      { x: -this.sticker.width / 2 - this.rotateHandleSize / 2, y: this.sticker.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2 },
+      { x: this.sticker.width / 2 - this.rotateHandleSize / 2, y: this.sticker.height / 2 - this.rotateHandleSize / 2 }
     ];
     handleRotate.map((data, i) => {
       this.ctx.drawImage(this.rotateIcon[i], data.x, data.y, this.rotateHandleSize, this.rotateHandleSize);
     });
     this.ctx.fillStyle = this.handleColor;
     const handleResizeIcon = [
-      { x: -this.width / 2, y: -this.height / 2 },
-      { x: this.width / 2 - this.resizeHandleSize, y: -this.height / 2 },
-      { x: -this.width / 2, y: this.height / 2 - this.resizeHandleSize },
-      { x: this.width / 2 - this.resizeHandleSize, y: this.height / 2 - this.resizeHandleSize }
+      { x: -this.sticker.width / 2, y: -this.sticker.height / 2 },
+      { x: this.sticker.width / 2 - this.resizeHandleSize, y: -this.sticker.height / 2 },
+      { x: -this.sticker.width / 2, y: this.sticker.height / 2 - this.resizeHandleSize },
+      { x: this.sticker.width / 2 - this.resizeHandleSize, y: this.sticker.height / 2 - this.resizeHandleSize }
     ];
     handleResizeIcon.map((data, i) => {
       this.ctx.drawImage(i % 3 == 0 ? this.resizeIcon[0] : this.resizeIcon[1], data.x, data.y, this.resizeHandleSize, this.resizeHandleSize);
@@ -452,16 +585,18 @@ var Click_default = Click;
 
 // src/lib/TouchGesture.ts
 var TouchGesture = class extends Click_default {
-  constructor() {
-    super();
+  constructor(canvasId) {
+    super(canvasId);
     this.lastTouches = [];
     this.animationFrame = null;
     this.isAnimating = false;
-    this.canvas.addEventListener("touchstart", this.onTouchStart.bind(this));
-    this.canvas.addEventListener("touchmove", this.onTouchMove.bind(this));
-    this.canvas.addEventListener("touchend", this.onTouchEnd.bind(this));
+    this.boundOnTouchDown = this.onTouchStart.bind(this);
+    this.boundOnTouchMove = this.onTouchMove.bind(this);
+    this.boundOnTouchUp = this.onTouchEnd.bind(this);
   }
   calculateScale(e) {
+    if (!this.sticker)
+      return;
     if (e.touches.length >= 2) {
       const initialDistance = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
@@ -472,31 +607,32 @@ var TouchGesture = class extends Click_default {
         this.lastTouches[0].clientY - this.lastTouches[1].clientY
       );
       const deltaDistance = currentDistance - initialDistance;
-      const newHeight = this.height - deltaDistance;
+      const newHeight = this.sticker.height - deltaDistance;
       const newWidth = newHeight * this.aspectRatio;
-      const deltaX = (this.width - newWidth) / 2;
-      const deltaY = (this.height - newHeight) / 2;
-      this.width = newWidth;
-      this.height = newHeight;
+      const deltaX = (this.sticker.width - newWidth) / 2;
+      const deltaY = (this.sticker.height - newHeight) / 2;
+      this.sticker.width = newWidth;
+      this.sticker.height = newHeight;
       this.x += deltaX;
       this.y += deltaY;
-      return deltaDistance;
     }
-    return 1;
   }
   calculateRotation(e) {
-    if (e.touches.length >= 2) {
-      const initialAngle = Math.atan2(
-        this.lastTouches[1].clientY - this.lastTouches[0].clientY,
-        this.lastTouches[1].clientX - this.lastTouches[0].clientX
-      );
-      const currentAngle = Math.atan2(
-        e.touches[1].clientY - e.touches[0].clientY,
-        e.touches[1].clientX - e.touches[0].clientX
-      );
-      return this.angle + (currentAngle - initialAngle);
+    if (this.sticker) {
+      if (e.touches.length >= 2) {
+        const initialAngle = Math.atan2(
+          this.lastTouches[1].clientY - this.lastTouches[0].clientY,
+          this.lastTouches[1].clientX - this.lastTouches[0].clientX
+        );
+        const currentAngle = Math.atan2(
+          e.touches[1].clientY - e.touches[0].clientY,
+          e.touches[1].clientX - e.touches[0].clientX
+        );
+        return this.sticker.angle + (currentAngle - initialAngle);
+      }
+      return this.sticker.angle;
     }
-    return this.angle;
+    return 0;
   }
   animate() {
     if (!this.isAnimating)
@@ -515,13 +651,15 @@ var TouchGesture = class extends Click_default {
   onTouchStart(e) {
     e.preventDefault();
     if (e.touches.length >= 2) {
-      this.isAnimating = true;
-      this.selectedImage = false;
-      this.lastTouches = Array.from(e.touches);
-      ;
-      this.animate();
-      this.angle = this.calculateRotation(e);
-      this.scale = this.calculateScale(e);
+      if (this.sticker) {
+        this.isAnimating = true;
+        this.selectedImage = false;
+        this.lastTouches = Array.from(e.touches);
+        ;
+        this.animate();
+        this.sticker.angle = this.calculateRotation(e);
+        this.calculateScale(e);
+      }
     } else if (e.touches.length === 1) {
       super.onMouseDown(e);
     }
@@ -529,9 +667,11 @@ var TouchGesture = class extends Click_default {
   onTouchMove(e) {
     e.preventDefault();
     if (e.touches.length >= 2) {
-      this.angle = this.calculateRotation(e);
-      this.scale = this.calculateScale(e);
-      this.lastTouches = Array.from(e.touches);
+      if (this.sticker) {
+        this.sticker.angle = this.calculateRotation(e);
+        this.calculateScale(e);
+        this.lastTouches = Array.from(e.touches);
+      }
     } else if (e.touches.length === 1) {
       super.onMouseMove(e);
     }
@@ -543,17 +683,182 @@ var TouchGesture = class extends Click_default {
     this.clicked = false;
     this.selectedHandle = null;
     this.stopAnimate();
+    super.calculateAnchor();
+    super.dispatchEvent();
   }
 };
 var TouchGesture_default = TouchGesture;
 
-// src/core/Watermark.ts
+// src/index.ts
 var Watermark = class extends TouchGesture_default {
-  constructor() {
-    super();
+  constructor(canvasId) {
+    super(canvasId);
+    this.orientation = "portrait";
+  }
+  setCanvasSize(width, height) {
+    if (width > height) {
+      this.orientation = "landscape";
+    } else if (width < height) {
+      this.orientation = "portrait";
+    } else {
+      this.orientation = "square";
+    }
+    this.canvas.width = width;
+    this.canvas.height = height;
+    if (this.sticker) {
+      super.calculateRelativeXY();
+      if (this.sticker.size === "Fit") {
+        this.calculateFit();
+      }
+      if (this.sticker.size === "Fill") {
+        this.calculateFill();
+      }
+      super.dispatchEvent();
+      super.drawImage();
+    }
+  }
+  calculateFit() {
+    let newWidth = 0;
+    let newHeight = 0;
+    if (this.sticker.width / this.canvas.width > this.sticker.height / this.canvas.height) {
+      newWidth = this.canvas.width;
+      newHeight = newWidth / this.aspectRatio;
+    } else if (this.sticker.width / this.canvas.width < this.sticker.height / this.canvas.height) {
+      newHeight = this.canvas.height;
+      newWidth = newHeight * this.aspectRatio;
+    } else {
+      newWidth = this.canvas.width;
+      newHeight = this.canvas.height;
+    }
+    this.sticker.width = newWidth;
+    this.sticker.height = newHeight;
+    this.x = 0;
+    this.y = 0;
+  }
+  calculateFill() {
+    const canvasAspectRatio = this.canvas.width / this.canvas.height;
+    const stickerAspectRatio = this.sticker.width / this.sticker.height;
+    let newWidth = 0;
+    let newHeight = 0;
+    if (canvasAspectRatio > stickerAspectRatio) {
+      newWidth = this.canvas.width;
+      newHeight = newWidth / stickerAspectRatio;
+    } else if (canvasAspectRatio < stickerAspectRatio) {
+      newHeight = this.canvas.height;
+      newWidth = newHeight * stickerAspectRatio;
+    } else {
+      newWidth = this.canvas.width;
+      newHeight = this.canvas.height;
+    }
+    this.sticker.width = newWidth;
+    this.sticker.height = newHeight;
+    this.x = this.canvas.width / 2 - this.sticker.width / 2;
+    this.y = this.canvas.height / 2 - this.sticker.height / 2;
+  }
+  setSize(size) {
+    if (this.sticker) {
+      this.sticker.size = size;
+      if (size === "Fit") {
+        this.calculateFit();
+        super.calculateAnchor();
+      } else if (size === "Fill") {
+        this.calculateFill();
+        super.calculateAnchor();
+      }
+      super.dispatchEvent();
+      super.drawImage();
+    }
+  }
+  setStickerImage(sticker, width, height) {
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    const aspectRatio = sticker.width / sticker.height;
+    this.aspectRatio = aspectRatio;
+    if (width > canvasWidth) {
+      width = canvasWidth;
+      height = width / aspectRatio;
+    }
+    if (height > canvasHeight) {
+      height = canvasHeight;
+      width = height * aspectRatio;
+    }
+    width = Math.max(width, 100);
+    height = Math.max(height, 100);
+    if (this.sticker.size === "Custom") {
+      this.sticker.width = width;
+      this.sticker.height = height;
+      this.x = 0;
+      this.y = 0;
+    } else if (this.sticker.size === "Fit") {
+      this.calculateFit();
+    } else if (this.sticker.size === "Fill") {
+      this.calculateFill();
+    }
+    this.dispatchEvent();
+    this.drawImage();
+  }
+  setSticker(path) {
+    const img = new Image();
+    img.src = path;
+    img.onload = () => {
+      this.image = img, this.image.width = img.width, this.image.height = img.height, this.sticker.width = img.width;
+      this.sticker.height = img.height;
+      this.setStickerImage(img, img.width, img.height);
+    };
+  }
+  resizeOff() {
+    window.removeEventListener("resize", this.onResizeScreen);
+  }
+  resizeOn() {
+    window.addEventListener("resize", this.onResizeScreen);
+  }
+  listenerOff() {
+    this.canvas.removeEventListener("mouseenter", this.boundOnMouseEnter);
+    this.canvas.removeEventListener("mousedown", this.boundOnMouseDown);
+    this.canvas.removeEventListener("mousemove", this.boundOnMouseMove);
+    this.canvas.removeEventListener("mouseup", this.boundOnMouseUp);
+    this.canvas.removeEventListener("touchstart", this.boundOnTouchDown);
+    this.canvas.removeEventListener("touchmove", this.boundOnTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundOnTouchUp);
+  }
+  listenerOn() {
+    this.canvas.addEventListener("mouseenter", this.boundOnMouseEnter);
+    this.canvas.addEventListener("mousedown", this.boundOnMouseDown);
+    this.canvas.addEventListener("mousemove", this.boundOnMouseMove);
+    this.canvas.addEventListener("mouseup", this.boundOnMouseUp);
+    this.canvas.addEventListener("touchstart", this.boundOnTouchDown);
+    this.canvas.addEventListener("touchmove", this.boundOnTouchMove);
+    this.canvas.addEventListener("touchend", this.boundOnTouchUp);
+  }
+  setStickerConfig(data) {
+    if (!data.sticker)
+      return;
+    this.sticker = data;
+    const img = new Image();
+    img.src = data.sticker.path;
+    img.onload = () => {
+      this.image = img;
+      this.image.width = img.width;
+      this.image.height = img.height;
+      super.calculateRelativeXY();
+    };
+    super.drawImage();
+  }
+  setName(name) {
+    this.sticker.name = name;
+    super.dispatchEvent();
+  }
+  save() {
+    this.selectedImage = false;
+    super.drawImage();
+    const dataURL = this.canvas.toDataURL();
+    return dataURL;
+  }
+  getStickerData() {
+    return this.sticker;
   }
 };
-var Watermark_default = Watermark;
+var src_default = Watermark;
 export {
-  Watermark_default as Watermark
+  src_default as default
 };

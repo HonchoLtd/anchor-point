@@ -1,14 +1,14 @@
+import { Background, Sticker } from "types/type";
+
 class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
     protected image: HTMLImageElement;
+    protected sticker: Sticker;
+    protected background:Background|null=null;
     protected aspectRatio: number;
-    protected angle: number;
-    protected scale: number;
     protected x: number;
     protected y: number;
-    protected width: number;
-    protected height: number;
     protected resizeHandleSize: number = 40;
     protected rotateHandleSize: number = 80;
     protected handleColor: string = 'blue';
@@ -16,25 +16,21 @@ class Canvas {
     protected rotateIcon: HTMLImageElement[] = [];
     protected resizeIcon: HTMLImageElement[] = [];
     protected cursor: Record<string, string> = {
-        pointer: "./cursor/Hand.cur",
-        default: "./cursor/Arrow.cur",
-        neSize: "./cursor/SizeNESW.cur",
-        nwSize: "./cursor/SizeNWSE.cur",
-        rotate: "./cursor/Rotate.cur",
-        move: "./cursor/Cross.cur",
+        pointer: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Hand.cur",
+        default: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Arrow.cur",
+        neSize: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/SizeNESW.cur",
+        nwSize: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/SizeNWSE.cur",
+        rotate: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Rotate.cur",
+        move: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Cross.cur",
     };
-
-    protected constructor() {
-        this.canvas = document.getElementById("myCanvas") as HTMLCanvasElement;
+    protected onResizeScreen:EventListener;
+    protected constructor(canvasId:string) {
+        this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
         this.image = new Image();
         this.aspectRatio = 0;
-        this.angle = 0;
-        this.scale = 1;
         this.x = 0;
         this.y = 0;
-        this.width = 0;
-        this.height = 0;
         this.resizeHandleSize = 40;
         this.rotateHandleSize = 80;
         this.handleColor = 'blue';
@@ -42,36 +38,152 @@ class Canvas {
         this.rotateIcon = [];
         this.resizeIcon = [];
         this.setCursor('default');
-        this.setRotateIcon();
+        this.setIcon();
+        this.sticker = {
+            name:"Untitled",
+            width:0,
+            height:0,
+            x:0,
+            y:0,
+            anchor:"top-left",
+            size:"Custom",
+            angle:0,
+        };
 
         // Set the canvas dimensions based on the parent container size
         this.initializeCanvasSize();
-        window.addEventListener('resize', () => this.handleResizeScreen());
+        this.onResizeScreen = this.handleResizeScreen.bind(this);
+    }
+    protected calculateAnchor(anchor?:"top-left"|"top-center"|"top-right"|"middle-left"|"middle-center"|"middle-right"|"bottom-left"|"bottom-center"|"bottom-right"){
+        const data = anchor || this.sticker.anchor
+        switch(data){
+            case "top-left":
+                this.sticker.x = this.x;
+                this.sticker.y = this.y;
+                break;
+            case "top-center":
+                this.sticker.x = this.x - this.canvas.width/2;
+                this.sticker.y = this.y;
+                break;
+            case "top-right":
+                this.sticker.x = this.canvas.width - this.x;
+                this.sticker.y = this.y;
+                break;
+            case "middle-left":
+                this.sticker.x = this.x;
+                this.sticker.y = this.y - this.canvas.height/2;
+                break;
+            case "middle-center":
+                this.sticker.x = this.x - this.canvas.width/2;
+                this.sticker.y = this.y - this.canvas.height/2;
+                break;
+            case "middle-right":
+                this.sticker.x = this.canvas.width - this.x;
+                this.sticker.y = this.y - this.canvas.height/2;
+                break;
+            case "bottom-left":
+                this.sticker.x = this.x;
+                this.sticker.y = this.canvas.height - this.y;
+                break;
+            case "bottom-center":
+                this.sticker.x = this.x - this.canvas.width / 2;
+                this.sticker.y = this.canvas.height - this.y;
+                break;
+            case "bottom-right":
+                this.sticker.x = this.canvas.width - this.x;
+                this.sticker.y = this.canvas.height - this.y;
+                break;
+            default:
+                console.log("Wrong data input")
+                break;
+        }
+    }
+    protected calculateRelativeXY(anchor?:"top-left"|"top-center"|"top-right"|"middle-left"|"middle-center"|"middle-right"|"bottom-left"|"bottom-center"|"bottom-right"){
+        const data = anchor || this.sticker.anchor
+        let x = 0;
+        let y = 0;
+        switch(data){
+            case "top-left":
+                x = this.sticker.x;
+                y = this.sticker.y;
+                break;
+            case "top-center":
+                x = this.sticker.x + this.canvas.width/2;
+                y = this.sticker.y;
+                break;
+            case "top-right":
+                x = this.canvas.width - this.sticker.x;
+                y = this.sticker.y
+                break;
+            case "middle-left":
+                x = this.sticker.x
+                y = this.sticker.y + this.canvas.height/2;
+                break;
+            case "middle-center":
+                x=this.sticker.x + this.canvas.width/2;
+                y=this.sticker.y + this.canvas.height/2;
+                break;
+            case "middle-right":
+                x = this.canvas.width - this.sticker.x;
+                y = this.sticker.y + this.canvas.height/2;
+                break;
+            case "bottom-left":
+                x = this.sticker.x
+                y = this.canvas.height - this.sticker.y;
+                break;
+            case "bottom-center":
+                x = this.sticker.x + this.canvas.width / 2;
+                y = this.canvas.height - this.sticker.y;
+                break;
+            case "bottom-right":
+                x = this.canvas.width - this.sticker.x;
+                y = this.canvas.height - this.sticker.y;
+                break;
+            default:
+                console.log("Wrong data input")
+                break;
+        }
+        this.x=x;
+        this.y=y;
+    }
+    public setAnchorPoint(anchor:"top-left"|"top-center"|"top-right"|"middle-left"|"middle-center"|"middle-right"|"bottom-left"|"bottom-center"|"bottom-right"){
+        if(this.sticker){
+            this.sticker.anchor = anchor;
+            this.calculateAnchor(anchor)
+            this.dispatchEvent()
+            this.drawImage()
+        }
     }
 
-    private setRotateIcon() {
+    protected dispatchEvent(){
+        const sticker = this.sticker
+        const customEvent = new CustomEvent('sticker',{detail:{sticker}})
+        document.dispatchEvent(customEvent);
+    }
+
+    private setIcon() {
         const rotateIcon = [
-            "./cursor/png/top-left-rotate.png",
-            "./cursor/png/top-right-rotate.png",
-            "./cursor/png/bottom-left-rotate.png",
-            "./cursor/png/bottom-right-rotate.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/top-left-rotate.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/top-right-rotate.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/bottom-left-rotate.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/bottom-right-rotate.png",
         ];
         const resizeIcon = [
-            "./cursor/png/ne-resize.png",
-            "./cursor/png/nw-resize.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/ne-resize.png",
+            "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/png/nw-resize.png",
         ];
-        rotateIcon.map((ico) => {
+        rotateIcon.map((ico,index) => {
             const icon = new Image();
             icon.src = ico;
             icon.onload = () => {
-                this.rotateIcon.push(icon);
+                this.rotateIcon[index]=icon;
             };
         });
-        resizeIcon.map((ico) => {
+        resizeIcon.map((ico,index) => {
             const icon = new Image();
             icon.src = ico;
             icon.onload = () => {
-                this.resizeIcon.push(icon);
+                this.resizeIcon[index]=icon;
             };
         });
     }
@@ -81,8 +193,27 @@ class Canvas {
     }
 
     private initializeCanvasSize() {
-        this.canvas.width = this.canvas.parentElement!.clientWidth;
-        this.canvas.height = this.canvas.parentElement!.clientHeight;
+        if (this.background) {
+            // Calculate aspect ratio of the uploaded image
+            const aspectRatio = this.background.width / this.background.height;
+            // Get the parent element's dimensions
+            const parentElement = this.canvas.parentElement;
+            if (parentElement) {
+              const maxWidth = parentElement.clientWidth;
+              const maxHeight = parentElement.clientHeight;
+        
+              if (maxWidth / aspectRatio < maxHeight) {
+                this.canvas.width = maxWidth;
+                this.canvas.height = maxWidth / aspectRatio;
+              } else {
+                this.canvas.width = maxHeight * aspectRatio;
+                this.canvas.height = maxHeight;
+              }
+            }
+        }else{
+            this.canvas.width = this.canvas.parentElement!.clientWidth;
+            this.canvas.height = this.canvas.parentElement!.clientHeight;
+        }
     }
 
     private handleResizeScreen() {
@@ -91,57 +222,32 @@ class Canvas {
         this.drawImage();
     }
 
-    private setSticker(sticker: HTMLImageElement, width: number, height: number) {
-        const canvasWidth = this.canvas.width;
-        const canvasHeight = this.canvas.height;
-
-        // Calculate the scaled dimensions while maintaining the aspect ratio
-        const aspectRatio = sticker.width / sticker.height;
-        this.aspectRatio = aspectRatio;
-
-        // Scale the sticker to fit within the canvas width and height
-        if (width > canvasWidth) {
-            width = canvasWidth;
-            height = width / aspectRatio;
-        }
-
-        if (height > canvasHeight) {
-            height = canvasHeight;
-            width = height * aspectRatio;
-        }
-
-        // Ensure the sticker dimensions are at least 30x30 pixels
-        width = Math.max(width, 100);
-        height = Math.max(height, 100);
-
-        // Center the sticker on the canvas
-        this.width = width;
-        this.height = height;
-        this.x = 0;
-        this.y = 0;
-        this.drawImage();
-    }
-
-    public setImage(path: string) {
-        // Load the image
+    public setBackgroundImage(path:string){
         const img = new Image();
         img.src = path;
-
+    
         img.onload = () => {
-            this.image = img;
-            this.image.width = img.width;
-            this.image.height = img.height;
-            this.setSticker(img, img.width, img.height);
+            this.background ={
+                img:img,
+                width:img.width,
+                height:img.height,
+            }
+            this.handleResizeScreen()
         };
     }
 
     protected drawImage() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
-        this.ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        this.ctx.rotate(this.angle);
-        this.ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
-        this.ctx.restore();
+        if(this.background){
+            this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
+        }
+        if(this.sticker){
+            this.ctx.save();
+            this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+            this.ctx.rotate(this.sticker.angle);
+            this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+            this.ctx.restore();
+        }
     }
 }
 export default Canvas;

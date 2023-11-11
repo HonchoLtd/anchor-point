@@ -1,14 +1,16 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { ThemeProvider } from "@mui/material"
 
-import Home from "./pages/Home"
-import NotFound from "./pages/NotFound"
-import theme from "./data/theme"
+import Home from "@pages/Home"
+import NotFound from "@pages/NotFound"
+import theme from "@src/data/theme"
+import WatermarkConfig from "@src/pages/WatermarkConfig"
 
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="config" element={<WatermarkConfig />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

@@ -1,4 +1,5 @@
-import Canvas from "@lib/Canvas";
+import Canvas from "./Canvas";
+
 class Click extends Canvas {
     protected selectedImage: boolean = false;
     protected clicked: boolean = false;
@@ -20,10 +21,13 @@ class Click extends Canvas {
     private initialDistance: number = 0;
     private currentDistance: number = 0;
     private endPoint: null | HTMLElement = null;
-    private boundOnMouseEnter: EventListener;
+    protected boundOnMouseEnter: EventListener;
+    protected boundOnMouseDown: EventListener;
+    protected boundOnMouseMove: EventListener;
+    protected boundOnMouseUp: EventListener;
 
-    constructor() {
-        super();
+    constructor(canvasId: string) {
+        super(canvasId);
         this.selectedImage = false;
         this.clicked = false;
         this.dragStartX = 0;
@@ -42,10 +46,9 @@ class Click extends Canvas {
         this.initialWidth = 0;
         this.initialHeight = 0;
         this.boundOnMouseEnter = this.onMouseEnter.bind(this) as EventListener;
-        this.canvas.addEventListener('mouseenter', this.boundOnMouseEnter);
-        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+        this.boundOnMouseDown = this.onMouseDown.bind(this) as EventListener;
+        this.boundOnMouseMove = this.onMouseMove.bind(this) as EventListener;
+        this.boundOnMouseUp = this.onMouseUp.bind(this) as EventListener;
     }
 
     onMouseEnter(e: MouseEvent) {
@@ -53,6 +56,7 @@ class Click extends Canvas {
     }
 
     onMouseDown(e: MouseEvent|TouchEvent) {
+        if(!this.sticker)return;
         this.clicked = true;
         let clientX=0, clientY=0;
         if (e instanceof MouseEvent) {
@@ -75,8 +79,8 @@ class Click extends Canvas {
         if (this.isResizing) {
             this.resizeStartX = rotatedX;
             this.resizeStartY = rotatedY;
-            this.initialWidth = this.width;
-            this.initialHeight = this.height;
+            this.initialWidth = this.sticker.width;
+            this.initialHeight = this.sticker.height;
         } else if (this.isDragging) {
             this.dragStartX = mouseX - this.x;
             this.dragStartY = mouseY - this.y;
@@ -120,27 +124,33 @@ class Click extends Canvas {
     onMouseUp() {
         this.reset();
         this.selectedHandle = null;
+        super.dispatchEvent()
+        super.calculateAnchor()
     }
 
     handleDraging(mouseX: number, mouseY: number) {
+        if(!this.sticker)return;
         let newStickerX = mouseX - this.dragStartX;
         let newStickerY = mouseY - this.dragStartY;
-        newStickerX = Math.max(0, newStickerX);
-        newStickerY = Math.max(0, newStickerY);
-        newStickerX = Math.min(this.canvas.width - this.width, newStickerX);
-        newStickerY = Math.min(this.canvas.height - this.height, newStickerY);
+        // newStickerX = Math.max(0, newStickerX);
+        // newStickerY = Math.max(0, newStickerY);
+        // newStickerX = Math.min(this.canvas.width - this.sticker.width, newStickerX);
+        // newStickerY = Math.min(this.canvas.height - this.sticker.height, newStickerY);
         this.x = newStickerX;
         this.y = newStickerY;
     }
 
     getRotatedXY(x: number, y: number) {
-        const cosAngle = Math.cos(-this.angle);
-        const sinAngle = Math.sin(-this.angle);
-        const centerX = this.x + this.width / 2;
-        const centerY = this.y + this.height / 2;
-        const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
-        const rotatedY = (x - centerX) * sinAngle + (y - centerY) * cosAngle + centerY;
-        return { rotatedX: rotatedX, rotatedY: rotatedY, centerX: centerX, centerY: centerY, cosAngle: cosAngle, sinAngle: sinAngle };
+        if(this.sticker){
+            const cosAngle = Math.cos(-this.sticker.angle);
+            const sinAngle = Math.sin(-this.sticker.angle);
+            const centerX = this.x + this.sticker.width / 2;
+            const centerY = this.y + this.sticker.height / 2;
+            const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
+            const rotatedY = (x - centerX) * sinAngle + (y - centerY) * cosAngle + centerY;
+            return { rotatedX: rotatedX, rotatedY: rotatedY, centerX: centerX, centerY: centerY, cosAngle: cosAngle, sinAngle: sinAngle };
+        }
+        return { rotatedX: 0, rotatedY: 0, centerX: 0, centerY: 0, cosAngle: 0, sinAngle: 0 };
     }
 
     handleAction(mouseX: number, mouseY: number) {
@@ -201,10 +211,11 @@ class Click extends Canvas {
     isPointerInsideImage(mouseX: number, mouseY: number) {
         const { rotatedX, rotatedY } = this.getRotatedXY(mouseX, mouseY);
         return (
+            this.sticker &&
             rotatedX >= this.x &&
-            rotatedX <= this.x + this.width &&
+            rotatedX <= this.x + this.sticker.width &&
             rotatedY >= this.y &&
-            rotatedY <= this.y + this.height
+            rotatedY <= this.y + this.sticker.height
         );
     }
 
@@ -219,13 +230,14 @@ class Click extends Canvas {
     }
 
     getRotatePosition(x: number, y: number) {
+        if (!this.sticker)return null;
         const halfHandleSize = this.rotateHandleSize / 2;
         const { rotatedX, rotatedY, centerX, centerY } = this.getRotatedXY(x, y);
         const rotatedHandles = [
-            { x: centerX - this.width / 2, y: centerY - this.height / 2 },
-            { x: centerX + this.width / 2, y: centerY - this.height / 2 },
-            { x: centerX - this.width / 2, y: centerY + this.height / 2 },
-            { x: centerX + this.width / 2, y: centerY + this.height / 2 }
+            { x: centerX - this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+            { x: centerX + this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+            { x: centerX - this.sticker.width / 2, y: centerY + this.sticker.height / 2 },
+            { x: centerX + this.sticker.width / 2, y: centerY + this.sticker.height / 2 }
         ];
         for (let i = 0; i < rotatedHandles.length; i++) {
             const handle = rotatedHandles[i];
@@ -243,13 +255,14 @@ class Click extends Canvas {
     }
 
     getResizePosition(x: number, y: number) {
+        if(!this.sticker)return null;
         const halfHandleSize = this.resizeHandleSize;
         const { rotatedX, rotatedY, centerX, centerY } = this.getRotatedXY(x, y);
         const rotatedHandles = [
-            { x: centerX - this.width / 2, y: centerY - this.height / 2 },
-            { x: centerX + this.width / 2, y: centerY - this.height / 2 },
-            { x: centerX - this.width / 2, y: centerY + this.height / 2 },
-            { x: centerX + this.width / 2, y: centerY + this.height / 2 }
+            { x: centerX - this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+            { x: centerX + this.sticker.width / 2, y: centerY - this.sticker.height / 2 },
+            { x: centerX - this.sticker.width / 2, y: centerY + this.sticker.height / 2 },
+            { x: centerX + this.sticker.width / 2, y: centerY + this.sticker.height / 2 }
         ];
         for (let i = 0; i < rotatedHandles.length; i++) {
             const handle = rotatedHandles[i];
@@ -266,13 +279,16 @@ class Click extends Canvas {
     }
 
     handleRotation(mouseX: number, mouseY: number) {
-        const centerX = this.x + this.width / 2;
-        const centerY = this.y + this.height / 2;
-        const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
-        this.angle = angle;
+        if(this.sticker){
+            const centerX = this.x + this.sticker.width / 2;
+            const centerY = this.y + this.sticker.height / 2;
+            const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
+            this.sticker.angle = angle;
+        }
     }
 
     handleResize(mouseX: number, mouseY: number) {
+        if (!this.sticker)return;
         const delta = this.getRotatedXY(mouseX, mouseY);
         const deltaX = delta.rotatedX - this.resizeStartX;
         const deltaY = delta.rotatedY - this.resizeStartY;
@@ -327,30 +343,35 @@ class Click extends Canvas {
         } else if (newHeightFinal > newWidthFinal / this.aspectRatio) {
             newHeightFinal = newWidthFinal / this.aspectRatio;
         }
-        this.width = newWidthFinal;
-        this.height = newHeightFinal;
+        this.sticker.width = newWidthFinal;
+        this.sticker.height = newHeightFinal;
     }
 
-    clickDrawImage() {
+    private clickDrawImage() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
-        this.ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        this.ctx.rotate(this.angle);
-        this.ctx.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
-        if (this.selectedImage) {
-            this.drawHandles();
+        if(this.background){
+            this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
         }
-        this.ctx.restore();
+        if(this.sticker){
+            this.ctx.save();
+            this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+            this.ctx.rotate(this.sticker.angle);
+            this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+            if (this.selectedImage) {
+                this.drawHandles();
+            }
+            this.ctx.restore();
+        }
     }
 
-    drawHandles() {
-        
+    private drawHandles() {
+        if(!this.sticker)return;
         // this.ctx.fillStyle = "red";
         const handleRotate = [
-            {x:-this.width / 2 - this.rotateHandleSize + this.rotateHandleSize / 2,y:-this.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2},
-            {x:this.width / 2 - this.rotateHandleSize / 2,y:-this.height / 2 - this.rotateHandleSize / 2},
-            {x:-this.width / 2 - this.rotateHandleSize / 2,y:this.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2},
-            {x:this.width / 2 - this.rotateHandleSize / 2,y:this.height / 2 - this.rotateHandleSize / 2}
+            {x:-this.sticker.width / 2 - this.rotateHandleSize + this.rotateHandleSize / 2,y:-this.sticker.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2},
+            {x:this.sticker.width / 2 - this.rotateHandleSize / 2,y:-this.sticker.height / 2 - this.rotateHandleSize / 2},
+            {x:-this.sticker.width / 2 - this.rotateHandleSize / 2,y:this.sticker.height / 2 - this.rotateHandleSize + this.rotateHandleSize / 2},
+            {x:this.sticker.width / 2 - this.rotateHandleSize / 2,y:this.sticker.height / 2 - this.rotateHandleSize / 2}
         ]
 
         handleRotate.map((data,i)=>{
@@ -360,10 +381,10 @@ class Click extends Canvas {
             
             this.ctx.fillStyle = this.handleColor;
             const handleResizeIcon=[
-                {x:-this.width / 2,y:-this.height / 2},
-                {x:this.width / 2 - this.resizeHandleSize,y:-this.height / 2},
-                {x:-this.width / 2,y:this.height / 2 - this.resizeHandleSize},
-                {x:this.width / 2 - this.resizeHandleSize,y:this.height / 2 - this.resizeHandleSize}
+                {x:-this.sticker.width / 2,y:-this.sticker.height / 2},
+                {x:this.sticker.width / 2 - this.resizeHandleSize,y:-this.sticker.height / 2},
+                {x:-this.sticker.width / 2,y:this.sticker.height / 2 - this.resizeHandleSize},
+                {x:this.sticker.width / 2 - this.resizeHandleSize,y:this.sticker.height / 2 - this.resizeHandleSize}
             ]
             handleResizeIcon.map((data,i)=>{
             this.ctx.drawImage(i%3==0 ? this.resizeIcon[0] : this.resizeIcon[1],data.x, data.y, this.resizeHandleSize, this.resizeHandleSize);
