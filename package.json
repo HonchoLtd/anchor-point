@@ -1,6 +1,6 @@
 {
-  "name": "anchor-point",
-  "version": "1.0.0",
+  "name": "watermark-anchor-point",
+  "version": "1.0.1",
   "description": "setting anchor point sdk for ubersnap",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
