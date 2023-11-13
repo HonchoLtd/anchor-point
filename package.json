@@ -2,7 +2,9 @@
   "name": "anchor-point",
   "version": "1.0.0",
   "description": "setting anchor point sdk for ubersnap",
-  "main": "build/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "test",
     "build": "tsup src/index.ts --format cjs,esm --dts",
@@ -15,6 +17,23 @@
   ],
   "author": "Ubersnap Pte. Ltd",
   "license": "ISC",
+  "homepage": "https://github.com/ferdyUbersnap/anchor-point",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ferdyUbersnap/anchor-point.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "ignore": [
+      "example/"
+    ]
+  },
+  "files": [
+    "/dist"
+  ],
+  "bugs": {
+    "url": "https://github.com/ferdyUbersnap/anchor-point/issues"
+  },
   "devDependencies": {
     "@types/express": "^4.17.19",
     "ts-loader": "^9.5.0",
