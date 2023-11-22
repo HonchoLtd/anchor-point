@@ -4,22 +4,14 @@ interface Background {
     height: number;
 }
 interface Sticker {
-    id?: string;
-    sticker?: Content;
-    name: string;
+    link?: string;
     width: number;
     height: number;
     x: number;
     y: number;
     anchor: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right";
     size: "Custom" | "Fit" | "Fill";
-    angle: number;
-}
-interface Content {
-    key: string;
-    path: string;
-    width: number;
-    height: number;
+    rotation: number;
 }
 
 declare class Canvas {
@@ -27,6 +19,7 @@ declare class Canvas {
     protected ctx: CanvasRenderingContext2D;
     protected image: HTMLImageElement;
     protected sticker: Sticker;
+    protected initialSticker: Sticker;
     protected background: Background | null;
     protected aspectRatio: number;
     protected x: number;
@@ -37,12 +30,14 @@ declare class Canvas {
     protected selectedHandle: string | null;
     protected rotateIcon: HTMLImageElement[];
     protected resizeIcon: HTMLImageElement[];
+    protected orientation: "landscape" | "portrait" | "square";
     protected cursor: Record<string, string>;
     protected onResizeScreen: EventListener;
     protected constructor(canvasId: string);
     protected calculateAnchor(anchor?: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
     protected calculateRelativeXY(anchor?: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
     setAnchorPoint(anchor: "top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right"): void;
+    deepEqual(obj1: any, obj2: any): boolean;
     protected dispatchEvent(): void;
     private setIcon;
     protected setCursor(condition: string): void;
@@ -122,7 +117,6 @@ declare class TouchGesture extends Click {
 }
 
 declare class Watermark extends TouchGesture {
-    private orientation;
     constructor(canvasId: string);
     setCanvasSize(width: number, height: number): void;
     calculateFit(): void;
@@ -135,9 +129,9 @@ declare class Watermark extends TouchGesture {
     listenerOff(): void;
     listenerOn(): void;
     setStickerConfig(data: Sticker): void;
-    setName(name: string): void;
     save(): string;
     getStickerData(): Sticker;
+    getOrientation(): "landscape" | "portrait" | "square";
 }
 
 export { Watermark as default };

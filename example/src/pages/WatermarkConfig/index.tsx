@@ -30,9 +30,9 @@ const anchorData: Anchor[] = [
 ]
 
 const WatermarkConfig = () => {
-    const { ref, onAction, sticker, orientation, mode, size, anchor, tooltip, inputRef, textRef } = Model()
+    const { ref, onAction, orientation, mode, size, anchor, tooltip, inputRef, textRef, sticker } = Model()
     return (
-        <Modal nameRef={textRef} nameCallback={onAction.nameCallback} backHandler={onAction.backHandle} saveHandler={onAction.saveHandle} name={sticker?.name || "Untitled"}>
+        <Modal nameRef={textRef} nameCallback={onAction.nameCallback} backHandler={onAction.backHandle} saveHandler={onAction.saveHandle} name={sticker.name || "Untitled"}>
             <Box
                 sx={{
                     width: "100%",

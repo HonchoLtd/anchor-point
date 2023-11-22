@@ -1,10 +1,11 @@
-import { Background, Sticker } from "types/type";
+import { Background, EventCustom, Sticker } from "types/type";
 
 class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
     protected image: HTMLImageElement;
     protected sticker: Sticker;
+    protected initialSticker: Sticker;
     protected background:Background|null=null;
     protected aspectRatio: number;
     protected x: number;
@@ -15,6 +16,7 @@ class Canvas {
     protected selectedHandle: string | null = null;
     protected rotateIcon: HTMLImageElement[] = [];
     protected resizeIcon: HTMLImageElement[] = [];
+    protected orientation: "landscape"|"portrait"|"square"="portrait"
     protected cursor: Record<string, string> = {
         pointer: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Hand.cur",
         default: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Arrow.cur",
@@ -40,15 +42,25 @@ class Canvas {
         this.setCursor('default');
         this.setIcon();
         this.sticker = {
-            name:"Untitled",
+            link:"",
             width:0,
             height:0,
             x:0,
             y:0,
             anchor:"top-left",
             size:"Custom",
-            angle:0,
+            rotation:0,
         };
+        this.initialSticker = {
+            link:"",
+            width:0,
+            height:0,
+            x:0,
+            y:0,
+            anchor:"top-left",
+            size:"Custom",
+            rotation:0,
+        }
 
         // Set the canvas dimensions based on the parent container size
         this.initializeCanvasSize();
@@ -155,10 +167,44 @@ class Canvas {
         }
     }
 
+    deepEqual(obj1: any, obj2: any): boolean {
+        if (obj1 === obj2) {
+          return true;
+        }
+      
+        if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
+          return false;
+        }
+      
+        const keys1 = Object.keys(obj1);
+        const keys2 = Object.keys(obj2);
+      
+        if (keys1.length !== keys2.length) {
+          return false;
+        }
+      
+        for (const key of keys1) {
+          if (!keys2.includes(key) || !this.deepEqual(obj1[key], obj2[key])) {
+            return false;
+          }
+        }
+      
+        return true;
+      }
+      
+      
+
     protected dispatchEvent(){
-        const sticker = this.sticker
-        const customEvent = new CustomEvent('sticker',{detail:{sticker}})
-        document.dispatchEvent(customEvent);
+        const compare=this.deepEqual(this.initialSticker,this.sticker)
+        if(!compare){
+            const customEvent = new CustomEvent<EventCustom>('sticker',{
+                detail:{
+                    sticker:this.sticker,
+                    orientation:this.orientation,
+                }})
+            document.dispatchEvent(customEvent);
+            this.initialSticker = {...this.sticker}
+        }
     }
 
     private setIcon() {
@@ -244,7 +290,7 @@ class Canvas {
         if(this.sticker){
             this.ctx.save();
             this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
-            this.ctx.rotate(this.sticker.angle);
+            this.ctx.rotate(this.sticker.rotation);
             this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
             this.ctx.restore();
         }

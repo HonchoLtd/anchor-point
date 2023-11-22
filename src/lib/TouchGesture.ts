@@ -9,7 +9,6 @@ class TouchGesture extends Click {
 
     constructor(canvasId:string) {
         super(canvasId);
-
         this.boundOnTouchDown = this.onTouchStart.bind(this) as EventListener;
         this.boundOnTouchMove = this.onTouchMove.bind(this) as EventListener;
         this.boundOnTouchUp = this.onTouchEnd.bind(this) as EventListener;
@@ -55,9 +54,9 @@ class TouchGesture extends Click {
                     e.touches[1].clientY - e.touches[0].clientY,
                     e.touches[1].clientX - e.touches[0].clientX
                 );
-                return this.sticker.angle + (currentAngle - initialAngle);
+                return this.sticker.rotation + (currentAngle - initialAngle);
             }
-            return this.sticker.angle;
+            return this.sticker.rotation;
         }
         return 0;
     }
@@ -88,7 +87,7 @@ class TouchGesture extends Click {
             this.lastTouches = Array.from(e.touches);;
             this.animate();
 
-            this.sticker.angle = this.calculateRotation(e);
+            this.sticker.rotation = this.calculateRotation(e);
             this.calculateScale(e);
         }
         } else if (e.touches.length === 1) {
@@ -100,7 +99,7 @@ class TouchGesture extends Click {
         e.preventDefault();
         if (e.touches.length >= 2) {
             if(this.sticker){
-                this.sticker.angle = this.calculateRotation(e);
+                this.sticker.rotation = this.calculateRotation(e);
                 this.calculateScale(e);
                 this.lastTouches = Array.from(e.touches);
             }

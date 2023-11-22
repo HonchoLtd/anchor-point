@@ -1,7 +1,6 @@
 import { Sticker } from "types/type";
 import TouchGesture from "./lib/TouchGesture";
 class Watermark extends TouchGesture {
-    private orientation: "landscape"|"portrait"|"square"="portrait"
     constructor(canvasId:string){
         super(canvasId)
     }
@@ -15,17 +14,17 @@ class Watermark extends TouchGesture {
         }
         this.canvas.width = width;
         this.canvas.height = height;
-        if(this.sticker){
-            super.calculateRelativeXY()
-            if(this.sticker.size === "Fit"){
-                this.calculateFit()
-            }
-            if(this.sticker.size === "Fill"){
-                this.calculateFill()
-            }
-            super.dispatchEvent()
-            super.drawImage()
-        }
+        // if(this.sticker.link){
+        //     super.calculateRelativeXY()
+        //     if(this.sticker.size === "Fit"){
+        //         this.calculateFit()
+        //     }
+        //     if(this.sticker.size === "Fill"){
+        //         this.calculateFill()
+        //     }
+        //     super.dispatchEvent()
+        //     super.drawImage()
+        // }
     }
     calculateFit(){
         let newWidth= 0;
@@ -114,18 +113,19 @@ class Watermark extends TouchGesture {
         }else if(this.sticker.size === "Fill"){
             this.calculateFill()
         }
-        this.dispatchEvent()
+        super.dispatchEvent()
         this.drawImage();
     }
     public setSticker(path: string) {
         // Load the image
         const img = new Image();
         img.src = path;
-
+        
         img.onload = () => {
             this.image=img,
             this.image.width=img.width,
             this.image.height=img.height,
+            this.sticker.link = path;
             this.sticker.width = img.width
             this.sticker.height = img.height
             this.setStickerImage(img, img.width, img.height);
@@ -156,21 +156,27 @@ class Watermark extends TouchGesture {
         this.canvas.addEventListener("touchend", this.boundOnTouchUp);
     }
     setStickerConfig(data:Sticker){
-        if(!data.sticker)return;
-        this.sticker = data
-        const img = new Image();
-        img.src = data.sticker.path
-        img.onload = ()=>{
-            this.image = img
-            this.image.width = img.width
-            this.image.height = img.height
-            super.calculateRelativeXY()
+        this.sticker.anchor = data.anchor
+        this.sticker.height = data.height
+        this.sticker.width = data.height
+        this.sticker.rotation = data.rotation
+        this.sticker.size = data.size
+        this.sticker.x = data.x
+        this.sticker.y = data.y
+        if(data.link && data.link !== ""){
+            if(data.link !== this.sticker.link){
+                this.sticker.link = data.link
+                const img = new Image();
+                img.src = data.link
+                img.onload = ()=>{
+                    this.image = img
+                    this.image.width = img.width
+                    this.image.height = img.height
+                }
+            }
         }
+        super.calculateRelativeXY(data.anchor)
         super.drawImage()
-    }
-    setName(name:string){
-        this.sticker.name = name
-        super.dispatchEvent()
     }
     save(){
         this.selectedImage = false
@@ -180,6 +186,9 @@ class Watermark extends TouchGesture {
     }
     getStickerData(){
         return this.sticker
+    }
+    getOrientation(){
+        return this.orientation
     }
 }
 export default Watermark;

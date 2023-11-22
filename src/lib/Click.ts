@@ -124,8 +124,8 @@ class Click extends Canvas {
     onMouseUp() {
         this.reset();
         this.selectedHandle = null;
-        super.dispatchEvent()
         super.calculateAnchor()
+        super.dispatchEvent()
     }
 
     handleDraging(mouseX: number, mouseY: number) {
@@ -142,8 +142,8 @@ class Click extends Canvas {
 
     getRotatedXY(x: number, y: number) {
         if(this.sticker){
-            const cosAngle = Math.cos(-this.sticker.angle);
-            const sinAngle = Math.sin(-this.sticker.angle);
+            const cosAngle = Math.cos(-this.sticker.rotation);
+            const sinAngle = Math.sin(-this.sticker.rotation);
             const centerX = this.x + this.sticker.width / 2;
             const centerY = this.y + this.sticker.height / 2;
             const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
@@ -282,8 +282,8 @@ class Click extends Canvas {
         if(this.sticker){
             const centerX = this.x + this.sticker.width / 2;
             const centerY = this.y + this.sticker.height / 2;
-            const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
-            this.sticker.angle = angle;
+            const rotation = Math.atan2(mouseY - centerY, mouseX - centerX);
+            this.sticker.rotation = rotation;
         }
     }
 
@@ -355,7 +355,7 @@ class Click extends Canvas {
         if(this.sticker){
             this.ctx.save();
             this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
-            this.ctx.rotate(this.sticker.angle);
+            this.ctx.rotate(this.sticker.rotation);
             this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
             if (this.selectedImage) {
                 this.drawHandles();

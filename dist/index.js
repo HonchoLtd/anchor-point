@@ -2,7 +2,21 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -34,6 +48,7 @@ var Canvas = class {
     this.selectedHandle = null;
     this.rotateIcon = [];
     this.resizeIcon = [];
+    this.orientation = "portrait";
     this.cursor = {
       pointer: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Hand.cur",
       default: "https://raw.githubusercontent.com/ferdyUbersnap/cursor/main/cursor/Arrow.cur",
@@ -57,14 +72,24 @@ var Canvas = class {
     this.setCursor("default");
     this.setIcon();
     this.sticker = {
-      name: "Untitled",
+      link: "",
       width: 0,
       height: 0,
       x: 0,
       y: 0,
       anchor: "top-left",
       size: "Custom",
-      angle: 0
+      rotation: 0
+    };
+    this.initialSticker = {
+      link: "",
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      anchor: "top-left",
+      size: "Custom",
+      rotation: 0
     };
     this.initializeCanvasSize();
     this.onResizeScreen = this.handleResizeScreen.bind(this);
@@ -169,10 +194,37 @@ var Canvas = class {
       this.drawImage();
     }
   }
+  deepEqual(obj1, obj2) {
+    if (obj1 === obj2) {
+      return true;
+    }
+    if (typeof obj1 !== "object" || obj1 === null || typeof obj2 !== "object" || obj2 === null) {
+      return false;
+    }
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+    for (const key of keys1) {
+      if (!keys2.includes(key) || !this.deepEqual(obj1[key], obj2[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
   dispatchEvent() {
-    const sticker = this.sticker;
-    const customEvent = new CustomEvent("sticker", { detail: { sticker } });
-    document.dispatchEvent(customEvent);
+    const compare = this.deepEqual(this.initialSticker, this.sticker);
+    if (!compare) {
+      const customEvent = new CustomEvent("sticker", {
+        detail: {
+          sticker: this.sticker,
+          orientation: this.orientation
+        }
+      });
+      document.dispatchEvent(customEvent);
+      this.initialSticker = __spreadValues({}, this.sticker);
+    }
   }
   setIcon() {
     const rotateIcon = [
@@ -247,7 +299,7 @@ var Canvas = class {
     if (this.sticker) {
       this.ctx.save();
       this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
-      this.ctx.rotate(this.sticker.angle);
+      this.ctx.rotate(this.sticker.rotation);
       this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
       this.ctx.restore();
     }
@@ -372,8 +424,8 @@ var Click = class extends Canvas_default {
   onMouseUp() {
     this.reset();
     this.selectedHandle = null;
-    super.dispatchEvent();
     super.calculateAnchor();
+    super.dispatchEvent();
   }
   handleDraging(mouseX, mouseY) {
     if (!this.sticker)
@@ -385,8 +437,8 @@ var Click = class extends Canvas_default {
   }
   getRotatedXY(x, y) {
     if (this.sticker) {
-      const cosAngle = Math.cos(-this.sticker.angle);
-      const sinAngle = Math.sin(-this.sticker.angle);
+      const cosAngle = Math.cos(-this.sticker.rotation);
+      const sinAngle = Math.sin(-this.sticker.rotation);
       const centerX = this.x + this.sticker.width / 2;
       const centerY = this.y + this.sticker.height / 2;
       const rotatedX = (x - centerX) * cosAngle - (y - centerY) * sinAngle + centerX;
@@ -503,8 +555,8 @@ var Click = class extends Canvas_default {
     if (this.sticker) {
       const centerX = this.x + this.sticker.width / 2;
       const centerY = this.y + this.sticker.height / 2;
-      const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
-      this.sticker.angle = angle;
+      const rotation = Math.atan2(mouseY - centerY, mouseX - centerX);
+      this.sticker.rotation = rotation;
     }
   }
   handleResize(mouseX, mouseY) {
@@ -575,7 +627,7 @@ var Click = class extends Canvas_default {
     if (this.sticker) {
       this.ctx.save();
       this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
-      this.ctx.rotate(this.sticker.angle);
+      this.ctx.rotate(this.sticker.rotation);
       this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
       if (this.selectedImage) {
         this.drawHandles();
@@ -654,9 +706,9 @@ var TouchGesture = class extends Click_default {
           e.touches[1].clientY - e.touches[0].clientY,
           e.touches[1].clientX - e.touches[0].clientX
         );
-        return this.sticker.angle + (currentAngle - initialAngle);
+        return this.sticker.rotation + (currentAngle - initialAngle);
       }
-      return this.sticker.angle;
+      return this.sticker.rotation;
     }
     return 0;
   }
@@ -683,7 +735,7 @@ var TouchGesture = class extends Click_default {
         this.lastTouches = Array.from(e.touches);
         ;
         this.animate();
-        this.sticker.angle = this.calculateRotation(e);
+        this.sticker.rotation = this.calculateRotation(e);
         this.calculateScale(e);
       }
     } else if (e.touches.length === 1) {
@@ -694,7 +746,7 @@ var TouchGesture = class extends Click_default {
     e.preventDefault();
     if (e.touches.length >= 2) {
       if (this.sticker) {
-        this.sticker.angle = this.calculateRotation(e);
+        this.sticker.rotation = this.calculateRotation(e);
         this.calculateScale(e);
         this.lastTouches = Array.from(e.touches);
       }
@@ -719,7 +771,6 @@ var TouchGesture_default = TouchGesture;
 var Watermark = class extends TouchGesture_default {
   constructor(canvasId) {
     super(canvasId);
-    this.orientation = "portrait";
   }
   setCanvasSize(width, height) {
     if (width > height) {
@@ -731,17 +782,6 @@ var Watermark = class extends TouchGesture_default {
     }
     this.canvas.width = width;
     this.canvas.height = height;
-    if (this.sticker) {
-      super.calculateRelativeXY();
-      if (this.sticker.size === "Fit") {
-        this.calculateFit();
-      }
-      if (this.sticker.size === "Fill") {
-        this.calculateFill();
-      }
-      super.dispatchEvent();
-      super.drawImage();
-    }
   }
   calculateFit() {
     let newWidth = 0;
@@ -820,14 +860,15 @@ var Watermark = class extends TouchGesture_default {
     } else if (this.sticker.size === "Fill") {
       this.calculateFill();
     }
-    this.dispatchEvent();
+    super.dispatchEvent();
     this.drawImage();
   }
   setSticker(path) {
     const img = new Image();
     img.src = path;
     img.onload = () => {
-      this.image = img, this.image.width = img.width, this.image.height = img.height, this.sticker.width = img.width;
+      this.image = img, this.image.width = img.width, this.image.height = img.height, this.sticker.link = path;
+      this.sticker.width = img.width;
       this.sticker.height = img.height;
       this.setStickerImage(img, img.width, img.height);
     };
@@ -857,22 +898,21 @@ var Watermark = class extends TouchGesture_default {
     this.canvas.addEventListener("touchend", this.boundOnTouchUp);
   }
   setStickerConfig(data) {
-    if (!data.sticker)
-      return;
+    if (data.link && data.link !== "") {
+      console.log("link is same : ", data.link !== this.sticker.link);
+      if (data.link !== this.sticker.link) {
+        const img = new Image();
+        img.src = data.link;
+        img.onload = () => {
+          this.image = img;
+          this.image.width = img.width;
+          this.image.height = img.height;
+        };
+      }
+    }
     this.sticker = data;
-    const img = new Image();
-    img.src = data.sticker.path;
-    img.onload = () => {
-      this.image = img;
-      this.image.width = img.width;
-      this.image.height = img.height;
-      super.calculateRelativeXY();
-    };
+    super.calculateRelativeXY(data.anchor);
     super.drawImage();
-  }
-  setName(name) {
-    this.sticker.name = name;
-    super.dispatchEvent();
   }
   save() {
     this.selectedImage = false;
@@ -882,6 +922,9 @@ var Watermark = class extends TouchGesture_default {
   }
   getStickerData() {
     return this.sticker;
+  }
+  getOrientation() {
+    return this.orientation;
   }
 };
 var src_default = Watermark;
