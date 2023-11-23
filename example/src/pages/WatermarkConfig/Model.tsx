@@ -47,7 +47,10 @@ const Model = () => {
     }, [ref])
 
     useEffect(() => {
-        const centrifuge = new Centrifuge("ws://localhost:9090/connection/editor/socket?firebase_uid=1234&event_id=1")
+        const BASE_URL = import.meta.env.VITE_PUBLIC_WS_URL || "ws://127.0.0.1:9090"
+        const centrifuge = new Centrifuge(
+            `${BASE_URL}/connection/editor/socket?firebase_uid=1234&event_id=1`
+        )
         setWs(centrifuge)
         const chan = centrifuge.newSubscription("watermark:1234")
         setChannel(chan)
