@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 
-const BASE_URL = "http://localhost:9091"
+const BASE_URL = "https://dev.service.ubersnap.com"
 export const api = axios.create({ baseURL: `${BASE_URL}/api/v3`, timeout: 30000 })
 
 export interface Response<T> {

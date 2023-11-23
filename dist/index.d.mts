@@ -17,7 +17,7 @@ interface Sticker {
 declare class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
-    protected image: HTMLImageElement;
+    protected image: HTMLImageElement | undefined;
     protected sticker: Sticker;
     protected initialSticker: Sticker;
     protected background: Background | null;

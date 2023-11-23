@@ -14,7 +14,6 @@ interface Props {
     nameCallback?: (e: React.ChangeEvent<HTMLInputElement>) => void
     dots?: boolean
     name?: string
-    nameRef?: React.RefObject<HTMLDivElement> | null
 }
 
 const HeaderEditor = (props: Props) => {
@@ -49,7 +48,7 @@ const HeaderEditor = (props: Props) => {
                                 borderBottomColor: '#8D8D8D',
                             },
                         }}
-                        defaultValue={"Untitled"} id="standard-basic" variant="standard" onChange={props.nameCallback} />
+                        defaultValue={props.name} id="standard-basic" variant="standard" onChange={props.nameCallback} />
                 </Box>
             )}
             <Box sx={{

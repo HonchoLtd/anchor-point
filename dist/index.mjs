@@ -273,7 +273,7 @@ var Canvas = class {
     if (this.background) {
       this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
     }
-    if (this.sticker) {
+    if (this.sticker && this.image) {
       this.ctx.save();
       this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
       this.ctx.rotate(this.sticker.rotation);
@@ -601,7 +601,7 @@ var Click = class extends Canvas_default {
     if (this.background) {
       this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
     }
-    if (this.sticker) {
+    if (this.sticker && this.image) {
       this.ctx.save();
       this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
       this.ctx.rotate(this.sticker.rotation);
@@ -875,19 +875,24 @@ var Watermark = class extends TouchGesture_default {
     this.canvas.addEventListener("touchend", this.boundOnTouchUp);
   }
   setStickerConfig(data) {
-    if (data.link && data.link !== "") {
-      console.log("link is same : ", data.link !== this.sticker.link);
-      if (data.link !== this.sticker.link) {
-        const img = new Image();
-        img.src = data.link;
-        img.onload = () => {
-          this.image = img;
-          this.image.width = img.width;
-          this.image.height = img.height;
-        };
-      }
+    this.sticker.anchor = data.anchor;
+    this.sticker.height = data.height;
+    this.sticker.width = data.height;
+    this.sticker.rotation = data.rotation;
+    this.sticker.size = data.size;
+    this.sticker.x = data.x;
+    this.sticker.y = data.y;
+    if (data.link && data.link !== this.sticker.link) {
+      this.sticker.link = data.link;
+      const img = new Image();
+      img.src = data.link;
+      img.onload = () => {
+        this.image = img;
+        this.image.width = img.width;
+        this.image.height = img.height;
+        super.drawImage();
+      };
     }
-    this.sticker = data;
     super.calculateRelativeXY(data.anchor);
     super.drawImage();
   }

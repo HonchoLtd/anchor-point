@@ -14,17 +14,6 @@ class Watermark extends TouchGesture {
         }
         this.canvas.width = width;
         this.canvas.height = height;
-        // if(this.sticker.link){
-        //     super.calculateRelativeXY()
-        //     if(this.sticker.size === "Fit"){
-        //         this.calculateFit()
-        //     }
-        //     if(this.sticker.size === "Fill"){
-        //         this.calculateFill()
-        //     }
-        //     super.dispatchEvent()
-        //     super.drawImage()
-        // }
     }
     calculateFit(){
         let newWidth= 0;
@@ -163,20 +152,22 @@ class Watermark extends TouchGesture {
         this.sticker.size = data.size
         this.sticker.x = data.x
         this.sticker.y = data.y
-        if(data.link && data.link !== ""){
-            if(data.link !== this.sticker.link){
-                this.sticker.link = data.link
-                const img = new Image();
-                img.src = data.link
-                img.onload = ()=>{
-                    this.image = img
-                    this.image.width = img.width
-                    this.image.height = img.height
-                }
-            }
+        if (data.link && data.link !== this.sticker.link) {
+            this.sticker.link = data.link;
+            
+            const img = new Image();
+            img.src = data.link;
+            img.onload = () => {
+                this.image = img;
+                this.image.width = img.width;
+                this.image.height = img.height;
+                super.drawImage();
+            };
         }
-        super.calculateRelativeXY(data.anchor)
-        super.drawImage()
+        
+        super.calculateRelativeXY(data.anchor);
+        super.drawImage();
+        
     }
     save(){
         this.selectedImage = false

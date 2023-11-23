@@ -3,7 +3,7 @@ import { Background, EventCustom, Sticker } from "types/type";
 class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
-    protected image: HTMLImageElement;
+    protected image: HTMLImageElement|undefined;
     protected sticker: Sticker;
     protected initialSticker: Sticker;
     protected background:Background|null=null;
@@ -287,7 +287,7 @@ class Canvas {
         if(this.background){
             this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
         }
-        if(this.sticker){
+        if(this.sticker && this.image){
             this.ctx.save();
             this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
             this.ctx.rotate(this.sticker.rotation);

@@ -9,10 +9,9 @@ interface Props {
     undoHandler?: () => void
     redoHandler?: () => void
     saveHandler?: () => void
-    nameCallback?: (e: React.ChangeEvent<HTMLInputElement>) => void
+    nameCallback?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
     name?: string
     children?: React.ReactNode,
-    nameRef?: React.RefObject<HTMLDivElement>
 }
 const Modal = (props: Props) => {
     const mode = useAtomValue(modeAtom)
@@ -33,7 +32,7 @@ const Modal = (props: Props) => {
             }}
         >
             <Container maxWidth="xl" >
-                <HeaderEditor nameRef={props.nameRef || null} nameCallback={props.nameCallback} name={props.name} back={props.backHandler} undo={props.undoHandler} redo={props.redoHandler} save={props.saveHandler} />
+                <HeaderEditor nameCallback={props.nameCallback} name={props.name} back={props.backHandler} undo={props.undoHandler} redo={props.redoHandler} save={props.saveHandler} />
                 <BodyEditor>
                     {props.children}
                 </BodyEditor>

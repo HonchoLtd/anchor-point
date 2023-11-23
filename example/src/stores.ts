@@ -22,4 +22,4 @@ export const watermarkConfigDefault:WatermarkConfig={
 export const watermarkConfig = atom<Sticker[]>([])
 export const stickerConfig = atom<Sticker|null>(null)
 export const modeAtom = atom<boolean>(false)
-export const watermarkData = atom<WatermarkConfig>(watermarkConfigDefault)
+export const watermarkData = atom<WatermarkConfig|null>(null)
