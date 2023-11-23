@@ -1,4 +1,5 @@
 export interface Sticker{
+    name?:string;
     link:string;
     width:number;
     height:number;
