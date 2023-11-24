@@ -35,7 +35,6 @@ const Model = () => {
     const [anchor, setAnchor] = useState<"top-left" | "top-center" | "top-right" | "middle-left" | "middle-center" | "middle-right" | "bottom-left" | "bottom-center" | "bottom-right">("top-left")
     const [ws, setWs] = useState<Centrifuge | undefined>(undefined)
     const [channel, setChannel] = useState<Subscription | undefined>(undefined)
-    const [stream, setStream] = useState<Subscription | undefined>(undefined)
 
     useEffect(() => {
         if (ref.current) {
@@ -54,19 +53,16 @@ const Model = () => {
             `${BASE_URL}/connection/editor/socket?firebase_uid=1234&event_id=1&id=`
         )
         const chan = centrifuge.newSubscription("watermark:1234")
-        const str = centrifuge.newSubscription("watermark:1234:stream")
         setWs(centrifuge)
         setChannel(chan)
-        setStream(str)
         return () => {
             setWs(undefined)
             setChannel(undefined)
-            setStream(undefined)
         }
     }, [])
 
     useEffect(() => {
-        if (!ws || !watermark || !channel || !stream) return;
+        if (!ws || !watermark || !channel) return;
         channel.on("subscribed", async () => {
             await ws.rpc("watermark:get", {
                 id: sticker?.id
@@ -115,19 +111,14 @@ const Model = () => {
             setSize(temp[tempOrientation].stickers[temp[tempOrientation].index].size)
             watermark.setStickerConfig(temp[tempOrientation].stickers[temp[tempOrientation].index])
         })
-        stream.on("publication", async (ctx) => {
-            watermark.setStickerStream(ctx.data)
-        })
         ws.connect()
         channel.subscribe()
-        stream.subscribe()
         return () => {
             ws.disconnect()
             channel.unsubscribe()
-            stream.unsubscribe()
         }
 
-    }, [ws, watermark, channel, stream])
+    }, [ws, watermark, channel])
 
     const handleUndoRedo = useCallback((event: KeyboardEvent) => {
         // event.preventDefault();
