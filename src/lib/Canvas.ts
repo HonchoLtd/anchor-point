@@ -3,6 +3,7 @@ import { Background, EventCustom, Sticker } from "types/type";
 class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
+    protected clicked: boolean = false;
     protected image: HTMLImageElement|undefined;
     protected sticker: Sticker;
     protected initialSticker: Sticker;
@@ -39,6 +40,7 @@ class Canvas {
         this.selectedHandle = null;
         this.rotateIcon = [];
         this.resizeIcon = [];
+    this.clicked = false;
         this.setCursor('default');
         this.setIcon();
         this.sticker = {
@@ -159,12 +161,12 @@ class Canvas {
         this.y=y;
     }
     public setAnchorPoint(anchor:"top-left"|"top-center"|"top-right"|"middle-left"|"middle-center"|"middle-right"|"bottom-left"|"bottom-center"|"bottom-right"){
-        if(this.sticker){
-            this.sticker.anchor = anchor;
+        this.sticker.anchor = anchor;
+        if(this.sticker && this.sticker.link){
             this.calculateAnchor(anchor)
-            this.dispatchEvent()
             this.drawImage()
         }
+        this.dispatchEvent()
     }
 
     deepEqual(obj1: any, obj2: any): boolean {

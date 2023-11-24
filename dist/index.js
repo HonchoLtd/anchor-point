@@ -41,6 +41,7 @@ module.exports = __toCommonJS(src_exports);
 // src/lib/Canvas.ts
 var Canvas = class {
   constructor(canvasId) {
+    this.clicked = false;
     this.background = null;
     this.resizeHandleSize = 40;
     this.rotateHandleSize = 80;
@@ -69,6 +70,7 @@ var Canvas = class {
     this.selectedHandle = null;
     this.rotateIcon = [];
     this.resizeIcon = [];
+    this.clicked = false;
     this.setCursor("default");
     this.setIcon();
     this.sticker = {
@@ -187,12 +189,12 @@ var Canvas = class {
     this.y = y;
   }
   setAnchorPoint(anchor) {
-    if (this.sticker) {
-      this.sticker.anchor = anchor;
+    this.sticker.anchor = anchor;
+    if (this.sticker && this.sticker.link) {
       this.calculateAnchor(anchor);
-      this.dispatchEvent();
       this.drawImage();
     }
+    this.dispatchEvent();
   }
   deepEqual(obj1, obj2) {
     if (obj1 === obj2) {
@@ -312,7 +314,6 @@ var Click = class extends Canvas_default {
   constructor(canvasId) {
     super(canvasId);
     this.selectedImage = false;
-    this.clicked = false;
     this.dragStartX = 0;
     this.dragStartY = 0;
     this.isDragging = false;
@@ -332,7 +333,6 @@ var Click = class extends Canvas_default {
     this.currentDistance = 0;
     this.endPoint = null;
     this.selectedImage = false;
-    this.clicked = false;
     this.dragStartX = 0;
     this.dragStartY = 0;
     this.isDragging = false;
@@ -604,7 +604,7 @@ var Click = class extends Canvas_default {
         newWidth = newHeight * this.aspectRatio;
       }
     }
-    const minSize = 100;
+    const minSize = 50;
     let newWidthConstrained = Math.max(minSize, newWidth);
     let newHeightConstrained = Math.max(minSize, newHeight);
     let maxWidth = this.canvas.width - this.x;
@@ -673,30 +673,28 @@ var TouchGesture = class extends Click_default {
     this.boundOnTouchUp = this.onTouchEnd.bind(this);
   }
   calculateScale(e) {
-    if (!this.sticker)
+    if (!this.sticker || !this.sticker.link)
       return;
-    if (e.touches.length >= 2) {
-      const initialDistance = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const currentDistance = Math.hypot(
-        this.lastTouches[0].clientX - this.lastTouches[1].clientX,
-        this.lastTouches[0].clientY - this.lastTouches[1].clientY
-      );
-      const deltaDistance = currentDistance - initialDistance;
-      const newHeight = this.sticker.height - deltaDistance;
-      const newWidth = newHeight * this.aspectRatio;
-      const deltaX = (this.sticker.width - newWidth) / 2;
-      const deltaY = (this.sticker.height - newHeight) / 2;
-      this.sticker.width = newWidth;
-      this.sticker.height = newHeight;
-      this.x += deltaX;
-      this.y += deltaY;
-    }
+    const initialDistance = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const currentDistance = Math.hypot(
+      this.lastTouches[0].clientX - this.lastTouches[1].clientX,
+      this.lastTouches[0].clientY - this.lastTouches[1].clientY
+    );
+    const deltaDistance = currentDistance - initialDistance;
+    const newHeight = this.sticker.height - deltaDistance;
+    const newWidth = newHeight * this.aspectRatio;
+    const deltaX = (this.sticker.width - newWidth) / 2;
+    const deltaY = (this.sticker.height - newHeight) / 2;
+    this.sticker.width = newWidth;
+    this.sticker.height = newHeight;
+    this.x += deltaX;
+    this.y += deltaY;
   }
   calculateRotation(e) {
-    if (this.sticker) {
+    if (this.sticker && this.sticker.link) {
       if (e.touches.length >= 2) {
         const initialAngle = Math.atan2(
           this.lastTouches[1].clientY - this.lastTouches[0].clientY,
@@ -719,8 +717,9 @@ var TouchGesture = class extends Click_default {
     this.touchDrawImage();
   }
   stopAnimate() {
-    if (this.animationFrame)
-      cancelAnimationFrame(this.animationFrame);
+    if (!this.animationFrame)
+      return;
+    cancelAnimationFrame(this.animationFrame);
     this.isAnimating = false;
   }
   touchDrawImage() {
@@ -728,29 +727,25 @@ var TouchGesture = class extends Click_default {
   }
   onTouchStart(e) {
     e.preventDefault();
-    if (e.touches.length >= 2) {
-      if (this.sticker) {
-        this.isAnimating = true;
-        this.selectedImage = false;
-        this.lastTouches = Array.from(e.touches);
-        ;
-        this.animate();
-        this.sticker.rotation = this.calculateRotation(e);
-        this.calculateScale(e);
-      }
-    } else if (e.touches.length === 1) {
+    if (e.touches.length >= 2 && this.sticker && this.sticker.link) {
+      this.isAnimating = true;
+      this.selectedImage = false;
+      this.lastTouches = Array.from(e.touches);
+      ;
+      this.animate();
+      this.sticker.rotation = this.calculateRotation(e);
+      this.calculateScale(e);
+    } else {
       super.onMouseDown(e);
     }
   }
   onTouchMove(e) {
     e.preventDefault();
-    if (e.touches.length >= 2) {
-      if (this.sticker) {
-        this.sticker.rotation = this.calculateRotation(e);
-        this.calculateScale(e);
-        this.lastTouches = Array.from(e.touches);
-      }
-    } else if (e.touches.length === 1) {
+    if (e.touches.length >= 2 && this.sticker && this.sticker.link) {
+      this.sticker.rotation = this.calculateRotation(e);
+      this.calculateScale(e);
+      this.lastTouches = Array.from(e.touches);
+    } else {
       super.onMouseMove(e);
     }
   }
@@ -761,6 +756,7 @@ var TouchGesture = class extends Click_default {
     this.clicked = false;
     this.selectedHandle = null;
     this.stopAnimate();
+    super.drawImage();
     super.calculateAnchor();
     super.dispatchEvent();
   }
@@ -822,8 +818,8 @@ var Watermark = class extends TouchGesture_default {
     this.y = this.canvas.height / 2 - this.sticker.height / 2;
   }
   setSize(size) {
-    if (this.sticker) {
-      this.sticker.size = size;
+    this.sticker.size = size;
+    if (this.sticker && this.sticker.link) {
       if (size === "Fit") {
         this.calculateFit();
         super.calculateAnchor();
@@ -831,9 +827,9 @@ var Watermark = class extends TouchGesture_default {
         this.calculateFill();
         super.calculateAnchor();
       }
-      super.dispatchEvent();
       super.drawImage();
     }
+    super.dispatchEvent();
   }
   setStickerImage(sticker, width, height) {
     const canvasWidth = this.canvas.width;
@@ -913,10 +909,22 @@ var Watermark = class extends TouchGesture_default {
         this.image = img;
         this.image.width = img.width;
         this.image.height = img.height;
+        const aspectRatio = img.width / img.height;
+        this.aspectRatio = aspectRatio;
         super.drawImage();
       };
     }
+    this.initialSticker = __spreadValues({}, this.sticker);
     super.calculateRelativeXY(data.anchor);
+    super.drawImage();
+  }
+  setStickerStream(data) {
+    this.clicked = data.clicked;
+    this.x = data.x;
+    this.y = data.y;
+    this.sticker.width = data.width;
+    this.sticker.height = data.height;
+    this.sticker.rotation = data.rotation;
     super.drawImage();
   }
   save() {

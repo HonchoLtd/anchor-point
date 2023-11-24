@@ -2,7 +2,6 @@ import Canvas from "./Canvas";
 
 class Click extends Canvas {
     protected selectedImage: boolean = false;
-    protected clicked: boolean = false;
     private dragStartX: number = 0;
     private dragStartY: number = 0;
     private isDragging: boolean = false;
@@ -29,7 +28,6 @@ class Click extends Canvas {
     constructor(canvasId: string) {
         super(canvasId);
         this.selectedImage = false;
-        this.clicked = false;
         this.dragStartX = 0;
         this.dragStartY = 0;
         this.isDragging = false;
@@ -331,7 +329,7 @@ class Click extends Canvas {
                 newWidth = newHeight * this.aspectRatio;
             }
         }
-        const minSize = 100;
+        const minSize = 50;
         let newWidthConstrained = Math.max(minSize, newWidth);
         let newHeightConstrained = Math.max(minSize, newHeight);
         let maxWidth = this.canvas.width - this.x;

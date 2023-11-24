@@ -13,10 +13,19 @@ interface Sticker {
     size: "Custom" | "Fit" | "Fill";
     rotation: number;
 }
+interface EventStream {
+    clicked: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+}
 
 declare class Canvas {
     protected canvas: HTMLCanvasElement;
     protected ctx: CanvasRenderingContext2D;
+    protected clicked: boolean;
     protected image: HTMLImageElement | undefined;
     protected sticker: Sticker;
     protected initialSticker: Sticker;
@@ -49,7 +58,6 @@ declare class Canvas {
 
 declare class Click extends Canvas {
     protected selectedImage: boolean;
-    protected clicked: boolean;
     private dragStartX;
     private dragStartY;
     private isDragging;
@@ -129,6 +137,7 @@ declare class Watermark extends TouchGesture {
     listenerOff(): void;
     listenerOn(): void;
     setStickerConfig(data: Sticker): void;
+    setStickerStream(data: EventStream): void;
     save(): string;
     getStickerData(): Sticker;
     getOrientation(): "landscape" | "portrait" | "square";

@@ -57,8 +57,8 @@ class Watermark extends TouchGesture {
             this.y = (this.canvas.height/2) - (this.sticker.height/2);
     }
     setSize(size:"Custom"|"Fit"|"Fill"){
-        if(this.sticker){
-            this.sticker.size = size
+        this.sticker.size = size
+        if(this.sticker && this.sticker.link){
             if(size==="Fit"){
                 this.calculateFit()
                 super.calculateAnchor()
@@ -66,9 +66,9 @@ class Watermark extends TouchGesture {
                 this.calculateFill()
                 super.calculateAnchor()
             }
-            super.dispatchEvent()
             super.drawImage()
         }
+        super.dispatchEvent()
     }
     private setStickerImage(sticker: HTMLImageElement, width: number, height: number) {
         const canvasWidth = this.canvas.width;
@@ -154,16 +154,18 @@ class Watermark extends TouchGesture {
         this.sticker.y = data.y
         if (data.link && data.link !== this.sticker.link) {
             this.sticker.link = data.link;
-            
             const img = new Image();
             img.src = data.link;
             img.onload = () => {
                 this.image = img;
                 this.image.width = img.width;
                 this.image.height = img.height;
+                const aspectRatio = img.width / img.height;
+                this.aspectRatio = aspectRatio;
                 super.drawImage();
             };
         }
+        this.initialSticker = {...this.sticker}
         
         super.calculateRelativeXY(data.anchor);
         super.drawImage();

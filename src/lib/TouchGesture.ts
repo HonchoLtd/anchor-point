@@ -15,8 +15,7 @@ class TouchGesture extends Click {
     }
 
     calculateScale(e:TouchEvent): void {
-        if(!this.sticker)return;
-        if (e.touches.length >= 2) {
+        if(!this.sticker||!this.sticker.link)return;
             const initialDistance = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
@@ -37,14 +36,15 @@ class TouchGesture extends Click {
 
             this.sticker.width = newWidth;
             this.sticker.height = newHeight;
-
-            this.x += deltaX;
-            this.y += deltaY;
-        }
+            let x:number=this.x
+            let y:number=this.y
+            x += deltaX;
+            y += deltaY;
+        
     }
 
     calculateRotation(e: TouchEvent): number {
-        if(this.sticker){
+        if(this.sticker && this.sticker.link){
             if (e.touches.length >= 2) {
                 const initialAngle = Math.atan2(
                     this.lastTouches[1].clientY - this.lastTouches[0].clientY,
@@ -68,8 +68,8 @@ class TouchGesture extends Click {
     }
 
     private stopAnimate() {
-        if(this.animationFrame)
-            cancelAnimationFrame(this.animationFrame);
+        if(!this.animationFrame)return;
+        cancelAnimationFrame(this.animationFrame);
         this.isAnimating = false;
     }
 
@@ -79,31 +79,27 @@ class TouchGesture extends Click {
 
     private onTouchStart(e: TouchEvent) {
         e.preventDefault();
-
-        if (e.touches.length >= 2) {
-            if(this.sticker){
+        if(e.touches.length >= 2 && this.sticker && this.sticker.link){
             this.isAnimating = true;
             this.selectedImage = false;
             this.lastTouches = Array.from(e.touches);;
             this.animate();
-
             this.sticker.rotation = this.calculateRotation(e);
             this.calculateScale(e);
-        }
-        } else if (e.touches.length === 1) {
+            // super.drawImage()
+        } else{
             super.onMouseDown(e);
         }
     }
 
     private onTouchMove(e: TouchEvent) {
         e.preventDefault();
-        if (e.touches.length >= 2) {
-            if(this.sticker){
-                this.sticker.rotation = this.calculateRotation(e);
-                this.calculateScale(e);
-                this.lastTouches = Array.from(e.touches);
-            }
-        } else if (e.touches.length === 1) {
+        if(e.touches.length >= 2 && this.sticker && this.sticker.link){
+            this.sticker.rotation = this.calculateRotation(e);
+            this.calculateScale(e);
+            this.lastTouches = Array.from(e.touches);
+            // super.drawImage()          
+        } else {
             super.onMouseMove(e);
         }
     }
@@ -115,6 +111,7 @@ class TouchGesture extends Click {
         this.clicked = false;
         this.selectedHandle = null;
         this.stopAnimate();
+        super.drawImage()
         super.calculateAnchor()
         super.dispatchEvent()
     }
