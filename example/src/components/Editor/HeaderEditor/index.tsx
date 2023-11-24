@@ -13,6 +13,7 @@ interface Props {
     save?: () => void
     nameCallback?: (e: React.ChangeEvent<HTMLInputElement>) => void
     dots?: boolean
+    showName?: boolean
     name?: string
 }
 
@@ -33,7 +34,7 @@ const HeaderEditor = (props: Props) => {
                     <CardMedia sx={{ fill: `${mode ? "#000" : "#fff"}` }} src={back} component={"img"} />
                 </IconButton>
             )}
-            {props.name && (
+            {props.showName && (
                 <Box sx={{ marginLeft: "30px" }}>
                     <TextField
                         sx={{
@@ -48,7 +49,7 @@ const HeaderEditor = (props: Props) => {
                                 borderBottomColor: '#8D8D8D',
                             },
                         }}
-                        defaultValue={props.name} id="standard-basic" variant="standard" onChange={props.nameCallback} />
+                        value={props.name ? props.name : ""} id="standard-basic" variant="standard" onChange={props.nameCallback} />
                 </Box>
             )}
             <Box sx={{

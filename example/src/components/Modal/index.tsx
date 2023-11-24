@@ -32,7 +32,7 @@ const Modal = (props: Props) => {
             }}
         >
             <Container maxWidth="xl" >
-                <HeaderEditor nameCallback={props.nameCallback} name={props.name} back={props.backHandler} undo={props.undoHandler} redo={props.redoHandler} save={props.saveHandler} />
+                <HeaderEditor showName={true} nameCallback={props.nameCallback} name={props.name} back={props.backHandler} undo={props.undoHandler} redo={props.redoHandler} save={props.saveHandler} />
                 <BodyEditor>
                     {props.children}
                 </BodyEditor>
