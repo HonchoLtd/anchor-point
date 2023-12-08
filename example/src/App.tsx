@@ -10,7 +10,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="config" element={<WatermarkConfig />} />
+      <Route path="config/:id" element={<WatermarkConfig />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )

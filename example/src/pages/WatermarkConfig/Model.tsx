@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useRef, useEffect, useState, ChangeEvent, useCallback } from "react"
 import { modeAtom, watermarkData } from "@src/stores";
 import { useAtom } from "jotai";
 import Watermark from "@dist/index"
 // import { EventCustom } from "@src/types";
-import { UploadWatermark } from "@src/service/watermark";
+import { UploadWatermark, saveWatermarkConfig } from "@src/service/watermark";
 import { Centrifuge, Subscription } from "centrifuge";
 import { WatermarkConfig } from "@src/types";
 
@@ -23,6 +23,7 @@ interface OnAction {
 }
 
 const Model = () => {
+    const params = useParams()
     const navigate = useNavigate()
     const ref = useRef<HTMLCanvasElement>(null)
     const inputRef = useRef<HTMLInputElement>(null);
@@ -37,22 +38,22 @@ const Model = () => {
     const [channel, setChannel] = useState<Subscription | undefined>(undefined)
 
     useEffect(() => {
-        if (ref.current) {
+        if (ref.current && params) {
             const w = new Watermark("myCanvas")
             setWatermark(w)
             return () => {
                 setWatermark(undefined)
             }
         }
-    }, [ref])
+    }, [ref, params])
 
     useEffect(() => {
         const BASE_URL = import.meta.env.VITE_PUBLIC_WS_URL || "ws://127.0.0.1:9090"
         // const BASE_URL = "ws://127.0.0.1:9090"
         const centrifuge = new Centrifuge(
-            `${BASE_URL}/connection/editor/socket?firebase_uid=1234&event_id=1&id=`
+            `${BASE_URL}/connection/editor/socket?firebase_uid=ZfFSv8lKzjRRW3uBCJ3SBMtzEJk1&event_id=65717e7323738576f5f71e33&id=${params.id}`
         )
-        const chan = centrifuge.newSubscription("watermark:1234")
+        const chan = centrifuge.newSubscription(`watermark:65717e7323738576f5f71e33:${params.id}`)
         setWs(centrifuge)
         setChannel(chan)
         return () => {
@@ -153,8 +154,8 @@ const Model = () => {
         if (!watermark || !ws || !sticker) return;
         const sendData = {
             id: sticker.id,
-            event_id: "1",
-            user_id: "1234",
+            event_id: "65717e7323738576f5f71e33 ",
+            user_id: "ZfFSv8lKzjRRW3uBCJ3SBMtzEJk1",
             name: sticker.name,
             orientation: e.detail.orientation,
             config: e.detail.sticker
@@ -182,7 +183,13 @@ const Model = () => {
     const handleSave = () => {
         if (sticker) {
             console.log(sticker)
-            // navigate('/')
+            saveWatermarkConfig(sticker)
+                .then(() => {
+                    navigate('/')
+                })
+                .catch(e => {
+                    console.log(e)
+                })
         }
     }
 

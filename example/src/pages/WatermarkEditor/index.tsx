@@ -5,7 +5,7 @@ import SidebarEditor from "@src/components/Editor/SidebarEditor";
 import watermarkIcon from "@src/svg/Watermark-White.svg"
 
 const WatermarkEditor = () => {
-    const { ref, onAction, watermarkData } = Model();
+    const { ref, onAction, listConfig } = Model();
 
     return (
         <>
@@ -29,7 +29,7 @@ const WatermarkEditor = () => {
                         <Typography color={"#FFFFFF"} variant="buttonMedium" >Create watermark</Typography>
                     </Button>
                     <Divider color="#fff" />
-                    {watermarkData.map((data, index) => (
+                    {listConfig.map((data, index) => (
                         <Box sx={{ cursor: "pointer" }} key={index}>
                             <Typography color="#fff">{data.name}</Typography>
                         </Box>

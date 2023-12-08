@@ -19,6 +19,8 @@ export interface WatermarkConfig {
     id?:string;
     event_id?:string;
     name:string;
+    is_selected:boolean;
+    is_deleted:boolean;
     portrait:WatermarkData;
     landscape:WatermarkData;
     square:WatermarkData;

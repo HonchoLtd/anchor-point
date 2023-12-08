@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Watermark from "@dist/index"
 import { useAtomValue } from "jotai";
 import { watermarkConfig } from "@src/stores";
+import { getID, getWatermarkConfigByEventID } from "@src/service/watermark";
+import { WatermarkConfig } from "@src/types";
 
 interface OnAction {
     createWatermark: () => void
@@ -18,6 +20,7 @@ const Model = () => {
     const ref = useRef(null)
     const [watermark, setWatermark] = useState<Watermark | undefined>(undefined)
     const watermarkData = useAtomValue(watermarkConfig)
+    const [listConfig, setListConfig] = useState<WatermarkConfig[] | []>([])
 
     useEffect(() => {
         if (ref.current) {
@@ -38,8 +41,26 @@ const Model = () => {
         }
     }, [watermark])
 
+    useEffect(() => {
+        getWatermarkConfigByEventID("65717e7323738576f5f71e33")
+            .then(res => {
+                if (!res) return;
+                console.log(res)
+                setListConfig(res)
+            })
+            .catch(e => {
+                console.log(e)
+            })
+    }, [])
+
     const handleCreateWatermark = () => {
-        navigate("/config")
+        getID().then(res => {
+            console.log(res)
+            navigate(`/config/${res}`)
+        })
+            .catch(e => {
+                console.log(e)
+            })
     }
 
     const handleBack = () => {
@@ -70,6 +91,7 @@ const Model = () => {
         watermark,
         watermarkData,
         onAction,
+        listConfig,
     };
 };
 
