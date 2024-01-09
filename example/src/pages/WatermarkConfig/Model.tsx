@@ -48,12 +48,12 @@ const Model = () => {
     }, [ref, params])
 
     useEffect(() => {
-        const BASE_URL = import.meta.env.VITE_PUBLIC_WS_URL || "ws://127.0.0.1:9090"
-        // const BASE_URL = "ws://127.0.0.1:9090"
+        // const BASE_URL = import.meta.env.VITE_PUBLIC_WS_URL || "ws://127.0.0.1:9090"
+        const BASE_URL = "ws://127.0.0.1:9090"
         const centrifuge = new Centrifuge(
-            `${BASE_URL}/connection/editor/socket?firebase_uid=ZfFSv8lKzjRRW3uBCJ3SBMtzEJk1&event_id=65717e7323738576f5f71e33&id=${params.id}`
+            `${BASE_URL}/socket/editor?firebase_uid=ZfFSv8lKzjRRW3uBCJ3SBMtzEJk1&event_id=65717e7323738576f5f71e33&id=${params.id}`
         )
-        const chan = centrifuge.newSubscription(`watermark:65717e7323738576f5f71e33:${params.id}`)
+        const chan = centrifuge.newSubscription(`socket:editor:watermark:ZfFSv8lKzjRRW3uBCJ3SBMtzEJk1:65717e7323738576f5f71e33:${params.id}`)
         setWs(centrifuge)
         setChannel(chan)
         return () => {
