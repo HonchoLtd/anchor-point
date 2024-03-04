@@ -5,6 +5,8 @@ export const watermarkConfigDefault:WatermarkConfig={
     id:"",
     event_id:"",
     name:"Untitled",
+    is_selected: false,
+    is_deleted: false,
     portrait:{
         index:-1,
         stickers:[],
