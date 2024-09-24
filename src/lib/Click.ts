@@ -74,14 +74,33 @@ class Click extends Canvas {
         this.handleAction(mouseX, mouseY);
         this.handleCursor(mouseX, mouseY);
         const { rotatedX, rotatedY } = this.getRotatedXY(mouseX, mouseY);
+
+        const activeSticker = this.stickerMultiple.find(image =>
+            mouseX >= image.x &&
+            mouseX <= image.x + image.width &&
+            mouseY >= image.y &&
+            mouseY <= image.y + image.height
+        ) || null;
+
+        if(activeSticker) {
+            const img = new Image();
+            img.src = activeSticker.link || "";
+            this.image=img,
+            
+            this.x = activeSticker.x
+            this.y = activeSticker.y
+            
+            this.sticker = activeSticker
+        }
+
         if (this.isResizing) {
             this.resizeStartX = rotatedX;
             this.resizeStartY = rotatedY;
             this.initialWidth = this.sticker.width;
             this.initialHeight = this.sticker.height;
         } else if (this.isDragging) {
-            this.dragStartX = mouseX - this.x;
-            this.dragStartY = mouseY - this.y;
+            this.dragStartX = mouseX - this.sticker.x;
+            this.dragStartY = mouseY - this.sticker.y;
         } else if (this.isRotating) {
             this.rotateStartX = rotatedX;
             this.rotateStartY = rotatedY;
@@ -208,13 +227,20 @@ class Click extends Canvas {
 
     isPointerInsideImage(mouseX: number, mouseY: number) {
         const { rotatedX, rotatedY } = this.getRotatedXY(mouseX, mouseY);
-        return (
-            this.sticker &&
-            rotatedX >= this.x &&
-            rotatedX <= this.x + this.sticker.width &&
-            rotatedY >= this.y &&
-            rotatedY <= this.y + this.sticker.height
+        // return (
+        //     this.sticker &&
+        //     rotatedX >= this.x &&
+        //     rotatedX <= this.x + this.sticker.width &&
+        //     rotatedY >= this.y &&
+        //     rotatedY <= this.y + this.sticker.height
+        // );
+        const checkInsideImage = !!this.stickerMultiple.find(image =>
+            rotatedX >= image.x &&
+            rotatedX <= image.x + image.width &&
+            rotatedY >= image.y &&
+            rotatedY <= image.y + image.height
         );
+        return checkInsideImage
     }
 
     reset() {
@@ -351,14 +377,56 @@ class Click extends Canvas {
             this.ctx.drawImage(this.background.img, 0, 0, this.canvas.width, this.canvas.height);
         }
         if(this.sticker && this.image){
-            this.ctx.save();
-            this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
-            this.ctx.rotate(this.sticker.rotation);
-            this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+            // this.ctx.save();
+            // this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+            // this.ctx.rotate(this.sticker.rotation);
+            // this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
             if (this.selectedImage) {
-                this.drawHandles();
+                const border = this.border
+                this.stickerMultiple.forEach((sticker, index) => {
+                    const imgMulti = this.imageMultiple[index];
+
+                    // border
+                    /* this.ctx.save();
+                    this.ctx.strokeStyle = border[index].color;
+                    this.ctx.lineWidth  = border[index].width;
+                    this.ctx.strokeRect(
+                        sticker.x - border[index].width / 2,
+                        sticker.y - border[index].width / 2,
+                        sticker.width + border[index].width,   
+                        sticker.height + border[index].width    
+                    );
+                    this.ctx.restore(); */
+
+                    if(sticker.link !== this.sticker.link) {
+                        this.ctx.save();
+                        this.ctx.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
+                        this.ctx.rotate(sticker.rotation);
+                        this.ctx.drawImage(imgMulti, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
+                        this.ctx.restore();
+                    } else {
+                        if(this.image) {
+                            this.ctx.save();
+                            this.ctx.translate(this.x + this.sticker.width / 2, this.y + this.sticker.height / 2);
+                            this.ctx.rotate(this.sticker.rotation);
+                            this.ctx.drawImage(this.image, -this.sticker.width / 2, -this.sticker.height / 2, this.sticker.width, this.sticker.height);
+                            
+                            // draw indicator selected
+                            this.drawHandles();
+                            this.ctx.restore();
+                        }
+                    }
+                });
+            } else {   
+                this.imageMultiple.forEach((image, index) => {
+                    const sticker = this.stickerMultiple[index]
+                    this.ctx.save();
+                    this.ctx.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
+                    this.ctx.rotate(sticker.rotation);
+                    this.ctx.drawImage(image, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
+                    this.ctx.restore();
+                })
             }
-            this.ctx.restore();
         }
     }
 

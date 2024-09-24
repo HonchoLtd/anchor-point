@@ -183,5 +183,52 @@ class Watermark extends TouchGesture {
     getOrientation(){
         return this.orientation
     }
+
+    public addSticker(path: string) {
+        const img = new Image();
+        img.src = path;
+
+        img.onload = () => {
+            const newSticker: Sticker = {
+                link: path,
+                width: img.width,
+                height: img.height,
+                x: this.imageMultiple.length * 60 || 20,
+                y: this.imageMultiple.length * 50 || 20,
+                anchor: "top-left",
+                size: "Custom",
+                rotation: 0,
+            };
+            this.imageMultiple.push(img)
+
+            newSticker.width = img.width;
+            newSticker.height = img.height;
+            this.stickerMultiple.push(newSticker);
+            this.drawStickers();
+        };
+    }
+
+    private drawStickers() {
+        this.clearCanvas(); // Clear the canvas before re-drawing
+        this.stickerMultiple.forEach((sticker, index) => {
+            this.setStickerImagemultiple(sticker);
+        });
+    }
+
+    private setStickerImagemultiple(sticker: Sticker) {
+        const img = new Image();
+        img.src = sticker.link || "";
+        img.onload = () => {
+            this.ctx.save();
+            this.ctx.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
+            this.ctx.rotate(sticker.rotation);
+            this.ctx.drawImage(img, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
+            this.ctx.restore();
+        };
+    }
+
+    private clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
 }
 export default Watermark;

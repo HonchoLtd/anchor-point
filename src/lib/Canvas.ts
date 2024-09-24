@@ -7,6 +7,9 @@ class Canvas {
     protected image: HTMLImageElement|undefined;
     protected sticker: Sticker;
     protected initialSticker: Sticker;
+    protected imageMultiple: HTMLImageElement[];
+    protected stickerMultiple: Sticker[];
+    protected border: {width: number, color: string}[];
     protected background:Background|null=null;
     protected aspectRatio: number;
     protected x: number;
@@ -63,6 +66,22 @@ class Canvas {
             size:"Custom",
             rotation:0,
         }
+        this.stickerMultiple = []
+        this.imageMultiple = [];
+        this.border = [
+            {
+                width: 4,
+                color: "#ff0000"
+            },
+            {
+                width: 4,
+                color: "#00ff00"
+            },
+            {
+                width: 4,
+                color: "#0000ff"
+            },
+        ]
 
         // Set the canvas dimensions based on the parent container size
         this.initializeCanvasSize();
