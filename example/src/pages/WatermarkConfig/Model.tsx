@@ -6,7 +6,7 @@ import Watermark from "@dist/index"
 // import { EventCustom } from "@src/types";
 import { UploadWatermark, saveWatermarkConfig } from "@src/service/watermark";
 import { Centrifuge, Subscription } from "centrifuge";
-import { WatermarkConfig } from "@src/types";
+import { WatermarkConfig, WatermarkData } from "@src/types";
 
 interface OnAction {
     backHandle: () => void;
@@ -37,7 +37,35 @@ const Model = () => {
     const [ws, setWs] = useState<Centrifuge | undefined>(undefined)
     const [channel, setChannel] = useState<Subscription | undefined>(undefined)
 
+    const formatSticker = (data: WatermarkData) => {
+            const dataFormat = data.stickers.map(item => {
+                return {
+                    ...item,
+                    width:  Math.round(item.width),
+                    height:  Math.round(item.height),
+                    x:  Math.round(item.x),
+                    y:  Math.round(item.y),
+                    // rotation:  Math.round(item.rotation),
+                }
+            });
+            return {...data,stickers: dataFormat}
+        }
+
+    const convertDataFloatToInteger = (data: WatermarkConfig|null): WatermarkConfig| null => {
+        if(data) {
+            return {
+                ...data,
+                landscape: formatSticker(data.landscape),
+                portrait:formatSticker(data.portrait),
+                square: formatSticker(data.square),
+            }
+        } else {
+            return null;
+        }
+    }
+
     useEffect(() => {
+        // console.log({params})
         if (ref.current && params) {
             const w = new Watermark("myCanvas")
             setWatermark(w)
@@ -46,6 +74,17 @@ const Model = () => {
             }
         }
     }, [ref, params])
+
+    useEffect(() => {
+        if(watermark) {
+            console.log("setSticker")
+            watermark?.addSticker("https://s3.ap-southeast-1.amazonaws.com/dev.pronto.ubersnap/temp/65fa7587e3136971763ff84e.jpg")
+            watermark?.addSticker("https://s3.ap-southeast-1.amazonaws.com/dev.pronto.ubersnap/temp/66e9589e62505c8e72a4cecd.png")
+            watermark?.addSticker("https://s3.ap-southeast-1.amazonaws.com/dev.pronto.ubersnap/temp/66f3c00062505c8e72a4d43b.png")
+            // watermark?.addSticker("https://s3.ap-southeast-1.amazonaws.com/dev.pronto.ubersnap/temp/66e9589e62505c8e72a4cecd.png", 200, 100)
+            // watermark?.setSticker("https://s3.ap-southeast-1.amazonaws.com/dev.pronto.ubersnap/temp/66b9b97c20957b04e123699f.png")
+        }
+    }, [watermark])
 
     useEffect(() => {
         const BASE_URL = import.meta.env.VITE_PUBLIC_WS_URL || "ws://127.0.0.1:9090"
@@ -71,7 +110,8 @@ const Model = () => {
                 .then(ctx => {
                     const tempOrientation: "portrait" | "landscape" | "square" = ctx.data.orientation
                     const temp: WatermarkConfig = { ...ctx.data }
-                    setSticker(temp)
+                    const a = convertDataFloatToInteger(temp)                    
+                    setSticker(a)
                     setOrientation(tempOrientation)
                     switch (tempOrientation) {
                         case "portrait":
@@ -95,7 +135,9 @@ const Model = () => {
         channel.on("publication", async (ctx) => {
             const tempOrientation: "portrait" | "landscape" | "square" = ctx.data.orientation
             const temp: WatermarkConfig = ctx.data
-            setSticker(temp)
+            const a = convertDataFloatToInteger(temp)
+            setSticker(a)
+            
             setOrientation(tempOrientation)
             switch (tempOrientation) {
                 case "portrait":
